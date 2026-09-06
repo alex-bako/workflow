@@ -1,0 +1,6 @@
+{
+  "name": "agentic-workflow",
+  "owner": {"name": "Alex Bako"},
+  "metadata": {"description": "Shared development skills with domain language, graph routing and resumable reviews."},
+  "plugins": [{"name": "agentic-workflow", "source": "./plugins/agentic-workflow", "description": "Shared development skills and local graph workflow tools."}]
+}
