@@ -1,12 +1,19 @@
 ---
 name: aw-context
-description: Maintain or query a small project knowledge graph linking domain language, requirements, decisions, slices and code for focused context and impact analysis.
+description: Retrieve scoped Mem0 context and prepare compact worker packets; use project relationship indexes when relevant.
 ---
 
-# Project context graph
+# Shared project context
 
 Read [the shared contract](../../references/workflow.md) and
-[knowledge graph format](../../references/knowledge.md).
+[Mem0-only memory](../../references/memory.md). Start with one scoped Mem0 recall
+for the active slice. Prepare a small source/snapshot-linked packet for workers;
+do not have every child repeat the search. Record actual memory status and save
+accepted lessons through Mem0 only. Do not access Obsidian or another memory store.
+
+If structural relationships answer the task, use the existing project index below
+and [knowledge graph format](../../references/knowledge.md). It is a project
+artifact; do not create a new graph or index just to support memory recall.
 
 Use a graph only when relationships help answer a concrete question. Reuse an
 existing graph if available; otherwise keep a curated JSON index in the project.
@@ -28,6 +35,5 @@ This graph describes project knowledge. The separate execution graph routes work
    IDs and dependency cycles. Treat the graph as an index: canonical docs/code
    remain authoritative, and stale edges must be checked before use.
 
-Mem0 can recall relevant decisions when available; it does not replace typed
-dependency checks or the execution checkpoint. No graph server, embeddings or
-automatic background extraction are required for this skill.
+Mem0 does not replace typed dependency checks or exact execution checkpoints.
+No additional graph server, embeddings or memory provider are required.

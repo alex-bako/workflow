@@ -22,6 +22,11 @@ one and record the substitution. After a bounded failure, narrow the contract
 before escalating one tier; use the coordinator's frontier model only when the
 remaining uncertainty merits it. Never weaken a required review to save tokens.
 
+Use [Mem0-only memory and isolation](memory.md) before dispatch. Strict minimal
+workers run through `scripts/run_worker.py`; the coordinator provides verified
+Mem0 context and the child loads only its role instructions and code tools.
+Native dispatch is an option for an already minimal session, with the limits below.
+
 Claude loads the native `agents/*.md` profiles. Codex profiles are distributed in
 `codex-agents/`; `scripts/setup_agents.py` installs them into its native agents
 directory. Codex plugins do not install these files automatically. If native
@@ -41,6 +46,7 @@ Goal: one observable result; role and selected model/effort.
 Scope: exact worktree, files/symbols or URLs; snapshot/base; relevant callers.
 Write permission: owned files, allowed test/scratch outputs; everything else excluded.
 Known facts: domain terms, accepted decisions, relevant previous findings; source refs.
+Memory status: verified query/scope/IDs (or verified empty); unavailable + error if failed.
 Checks: acceptance conditions; concrete commands or facts to verify.
 Exclusions: no adjacent refactor, no graph writes, no child agents, no external messages.
 Budget: role turn limit; report <=200 words (scout <=120); artifact path for overflow.
@@ -56,8 +62,9 @@ Require Ponytail throughout work: inspect the real path/callers, reuse existing
 code, stdlib and native features; smallest correct change; no speculative layers;
 prove behavior. Never remove safety, validation, accessibility or error handling
 for brevity. These portable rules are embedded in every profile; separate Caveman
-and Ponytail installations are not required. If their full skills are available,
-apply them too without loading unrelated plugins or overriding task constraints.
+and Ponytail installations are not required. Do not load full skill libraries
+again. Every role consumes the coordinator's Mem0 context packet; no Obsidian or
+other memory tools, duplicate recall, or worker-written memory/checkpoints.
 
 Default at most two active workers, bounded by host capacity. Parallelize only
 independent work. One owner per edited file; shared contracts serialize writers.
@@ -79,12 +86,12 @@ paths, snapshot, findings and next action. Recover from files, not giant transcr
 
 ## Compaction
 
-Codex native profiles set `model_auto_compact_token_limit = 200000` with `total`
-scope per worker. This leaves the coordinator's threshold unchanged. It is a
-compaction trigger, not an artificial model context capacity. If using explicit
-dispatch without a loaded profile, pass these settings when supported; otherwise
-checkpoint/end the bounded worker before context grows and disclose the missing
-per-agent compaction control.
+The isolated Codex process sets `model_auto_compact_token_limit = 200000` with
+`total` scope. This leaves the coordinator unchanged. Inspection of Codex's role
+override implementation shows native roles project only selected config fields;
+do not claim per-role compaction or MCP isolation from arbitrary TOML settings.
+Native workers inherit their parent's compaction settings. Use the isolated
+process path when the explicit 200k worker policy is required.
 
 `scripts/setup_agents.py --claude-settings <settings.json>` sets
 `env.CLAUDE_CODE_AUTO_COMPACT_WINDOW` to `"200000"`, preserving unrelated settings.

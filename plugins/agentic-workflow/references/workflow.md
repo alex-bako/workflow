@@ -68,12 +68,13 @@ uncommitted files. The helper detects changed work but does not back it up or
 restore processes. On another machine transfer the actual Git state, working
 files, and run records through an authorized mechanism before resuming.
 
-If shared memory tools such as Mem0 are configured and storage is authorized,
-retrieve narrowly scoped project decisions at entry and save accepted decisions
-and reusable lessons at boundaries. Use a common project ID across both clients;
-include source, date and supersession. Do not store every tool output, secrets,
-or proposed decisions as accepted facts. Verify asynchronous writes. Memory is
-optional: the workflow remains usable with repository docs and local run state.
+Follow [Mem0-only memory](memory.md). The coordinator retrieves relevant Mem0
+facts once and supplies a bounded packet to each worker. Mem0 is the sole recall
+and durable-lesson provider; do not read/write Obsidian or another memory backend.
+Verify writes and cross-client namespace alignment. If unavailable, report the
+error and use explicit project artifacts for authorized work; never silently
+substitute another provider or claim persistence. Keep exact execution state in
+the existing checkpoints.
 
 ## Completion
 

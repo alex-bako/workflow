@@ -1,5 +1,9 @@
 # Design research — 2026-09-06
 
+Current policy (2026-09-11): Mem0 exclusively for shared memory. The provider
+alternatives below and in context-engine-options.md are historical research,
+not active recommendations to install additional memory backends.
+
 The requested graph engineering covers both agent orchestration and project
 knowledge. They share IDs and artifact references, but serve different purposes.
 
@@ -69,4 +73,33 @@ Current primary documentation and local CLI checks:
 
 Context7 and official pages checked; local clients Codex 0.154.0 and Claude
 2.1.268. Profile loading/checks do not prove model quality or guaranteed savings.
+
+## Mem0-only and isolation correction — 2026-09-11
+
+User selected Mem0 exclusively. Verified a real memory write/read through the
+hosted MCP and retrieval of that same preference through configured Claude Mem0.
+The hosted endpoints match. Codex's separate capture plugin still reports no
+credential in its own data directory, so it is not evidence of automatic capture;
+the workflow selects the verified read/write MCP path and checks persisted writes.
+
+The prior assumption that all normal config fields apply inside Codex roles was
+too broad. [Current role implementation](https://github.com/openai/codex/blob/main/codex-rs/core/src/agent/role.rs)
+projects selected model/instruction/feature/skill settings; arbitrary MCP and
+compaction fields are not applied. Native profiles now contain only supported
+overrides. The isolated process supplies the explicit 200k compaction config.
+
+[Claude native agents](https://code.claude.com/docs/en/sub-agents) can allowlist
+tools and omit Skill, while plugin hooks operate at session scope. The worker
+launcher disables installed plugins and MCP per process, supplies embedded
+Caveman/Ponytail instructions and a Mem0-derived brief, and preserves subscription
+authentication. Existing rules/project instructions and enforced policies remain.
+No isolated worker needs to reconnect to all coordinator integrations.
+
+Provider allowances are not a fixed universal token count: model, effort, context,
+tools and task complexity matter. See [Codex plan usage](https://help.openai.com/en/articles/11369540)
+and [Claude usage/length limits](https://support.claude.com/en/articles/11647753-how-do-usage-and-length-limits-work).
+Recommend one planning owner, medium effort for clear implementation, compact
+packets, deterministic checks before reviews and scoped repairs. A second expensive
+review only for risky boundaries is a proposed policy change; current required
+reviewers remain intact. No benchmarked savings percentage is claimed.
 Measure actual selected models, token use, retries and accepted outcomes in a pilot.

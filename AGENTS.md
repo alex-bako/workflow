@@ -4,6 +4,9 @@ The distributable plugin is `plugins/agentic-workflow`. Codex and Claude load th
 same skills. Keep vendor configuration in manifests and native agent profiles;
 shared delegation policy lives in references/subagents.md.
 
+Use Mem0 exclusively for shared recall and session lessons. Do not use Obsidian
+or other memory providers. Preserve canonical project docs and exact checkpoints.
+
 Keep the helper Python-stdlib-only. It routes work and validates recorded evidence;
 the host coding agent performs the work. Do not add background agents, network
 calls, global hooks, or a graph database without a demonstrated requirement.

@@ -1,5 +1,9 @@
 # Shared context options — 2026-09-11
 
+**Superseded recommendation:** The user subsequently selected Mem0 exclusively.
+Do not install the alternative backends below for the current workflow. Preserve
+this document as research history; current policy is references/memory.md.
+
 Research for the user's request to avoid repeated codebase discovery in fresh
 Codex/Claude workers. Recommendations below are proposals, not installed changes
 or measured performance rankings. Obsidian is not proposed as a runtime dependency.

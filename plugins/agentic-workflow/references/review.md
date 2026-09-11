@@ -24,18 +24,19 @@ use an available real Codex review path. If unavailable, record incomplete and
 explain the missing capability. Never replace independent review with a fictional
 persona while preserving its claimed identity.
 
-Claude example (check local `--help` for supported flags). Write the bounded brief
-to a file first. Native profile includes the compact worker rules and Opus model:
+For minimal cross-model reviews, write the bounded brief and its `Memory status:`
+field first. Use the isolated worker launcher (Opus for the Claude refuter):
 
 ```sh
-CLAUDE_CODE_AUTO_COMPACT_WINDOW=200000 claude -p \
-  --agent agentic-workflow:aw-refuter --max-turns 16 --output-format json \
-  < /path/to/review-brief.txt > /path/to/review-output.json
+python3 /path/to/plugin/scripts/run_worker.py --client claude --role aw-refuter \
+  --project /path/to/worktree --brief /path/to/review-brief.txt \
+  --output /path/to/new-review-output.json
 ```
 
-Requires the installed plugin (or add `--plugin-dir /path/to/plugin`). If the
-profile is unavailable, use `--model opus --tools Read,Grep,Glob,Bash,Write` with
-the full refuter instructions in the brief. Bash permits actual checks; it is
+From Claude, select `--client codex` for the real Codex refuter. The coordinator
+has already retrieved Mem0 context; the child needs no memory-server tools.
+Native profiles remain available in already minimal sessions, with the isolation
+limits described in [memory.md](memory.md). Bash permits actual checks; it is
 not a read-only sandbox. The brief forbids source edits and Git mutations. Inherit
 host permissions, never broaden them for tests; unavailable checks are incomplete.
 Check the actual environment's hooks, MCP and plugins before treating the invocation

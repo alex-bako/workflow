@@ -20,7 +20,7 @@ Read [the shared contract](../../references/workflow.md) and
    a mutation just because its completion message was lost. Record known external
    identifiers before retrying. A checkpoint restores workflow state, not process
    execution or another client's hidden conversation.
-4. Retrieve only relevant project memories and graph neighbors if configured.
+4. Retrieve only relevant Mem0 project memories and existing graph neighbors.
    Follow artifact authority and domain language; do not reload the entire history.
 5. Execute the returned skill/role, record its outcome/evidence with the current
    revision, and inspect the next route. Continue while authorized and executable.

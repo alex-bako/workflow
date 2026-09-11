@@ -54,8 +54,8 @@ python3 ~/work/agentic-workflow/plugins/agentic-workflow/scripts/setup_agents.py
 ```
 
 This installs five native Codex profiles and merges Claude's 200,000-token
-compaction window into settings. Codex profiles set a 200,000-token compaction
-trigger per worker, preserving the coordinator's threshold. Setup preserves unrelated settings, backs up changed
+compaction window into settings. Isolated Codex workers use a 200,000-token
+compaction trigger; native roles inherit the parent's threshold. Setup preserves unrelated settings, backs up changed
 Claude settings and refuses conflicting agent files. Merge customized profiles
 manually when upgrading. For project-only setup, use `--codex-home /project/.codex`
 and `--claude-settings /project/.claude/settings.json`. Either flag works alone.
@@ -63,8 +63,9 @@ Restart both clients after setup; existing sessions keep their loaded configurat
 
 Claude discovers the five profiles directly from the plugin. Codex uses its
 native agents directory; installing the skills alone does not install profiles.
-Neither client needs separate Caveman/Ponytail plugins: every profile embeds the
-core behavior, applying the full skills too when available.
+Neither client needs separate Caveman/Ponytail plugins in each child: every profile
+embeds the core behavior. Workers consume a small Mem0-derived packet supplied by
+the coordinator instead of loading full plugin libraries or repeating recall.
 
 | Worker | Codex | Claude | Work |
 | --- | --- | --- | --- |
@@ -125,7 +126,7 @@ For authorized implementation:
 | `aw-execute` | Focused implementation/repair and meaningful checks |
 | `aw-review` | Independent review, adjudication, scoped rereview and final verification |
 | `aw-resume` | Coordinate graph steps or resume from exact local run state |
-| `aw-context` | Curate/query domain, requirement, decision, slice and code relationships |
+| `aw-context` | Retrieve scoped Mem0 facts and prepare compact worker context |
 
 Each skill works independently. A request to plan does not start implementation.
 The full graph is useful for multi-stage work and cross-client handoffs.
@@ -204,9 +205,19 @@ Its [format and query examples](plugins/agentic-workflow/references/knowledge.md
 use stable IDs, typed edges and provenance. No automatic extraction or embeddings.
 Queries are bounded neighborhoods, not exhaustive review coverage.
 
-Mem0 integration is optional and is not installed/configured by this plugin.
-When configured and authorized, skills use it for accepted decisions and lessons
-at useful boundaries. Canonical docs and local run state remain usable without it.
+Mem0 is the exclusive shared-memory provider. The coordinator searches once per
+slice/meaningful context change and verifies essential writes at boundaries.
+Workers receive relevant memories in their packet; they do not access Obsidian or
+another memory backend. Canonical docs and exact run state stay in the repository.
+An unavailable Mem0 connection is reported; authorized work can proceed from
+explicit artifacts without pretending that recall or persistence succeeded.
+
+See [Mem0 and minimal workers](plugins/agentic-workflow/references/memory.md) for
+scope, write verification and isolation. Use `scripts/run_worker.py --help` for the
+isolated process path. Native Claude profiles restrict tools but cannot disable
+session plugin hooks; native Codex roles cannot selectively remove inherited MCP.
+Strict workers therefore use a separate CLI process with role instructions and a
+Mem0 packet. Authentication stays with the installed client; no API billing switch.
 
 ## Extend and validate
 
