@@ -26,7 +26,8 @@ Read [the shared contract](../../references/workflow.md) and
    revision, and inspect the next route. Continue while authorized and executable.
    Stop for a material user decision, missing capability, or escalation. Do not
    busy-loop on an unchanged node or record fabricated evidence to advance.
-6. At escalation diagnose repeated findings, inadequate tests, scope churn, or
+6. At escalation use a bounded `aw-debugger` only for hard root-cause uncertainty;
+   keep routine diagnosis local. Diagnose repeated findings, inadequate tests, scope churn, or
    conflicting requirements. Propose a concrete revised plan. Replanning retains
    the repair count; starting a new slice is the only normal counter reset.
 

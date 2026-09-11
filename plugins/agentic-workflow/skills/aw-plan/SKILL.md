@@ -21,10 +21,10 @@ Use `aw-context` to locate related sources when present, then inspect code/calle
 4. Define worker-sized tasks only where they can be independently owned. Specify
    dependencies, allowed edit scope, required context and expected evidence.
    Keep tightly coupled changes together; parallelism is optional.
-5. Choose required checks and reviewer perspectives for the risk. Record model
-   roles without hardcoding obsolete vendor model IDs. Use the strongest judgment
-   for unresolved architecture and security-sensitive boundaries, focused models
-   for well-specified work. Record the review policy before implementation.
+5. Choose required checks and reviewer perspectives for the risk. Resolve models
+   from the [delegation policy](../../references/subagents.md), checking actual
+   availability; record role/model/effort, scope, budget and substitutions. Keep
+   architecture judgment with the coordinator. Record review policy before coding.
 6. Ask one material question at a time; proceed on already accepted instructions.
    If a domain ambiguity changes behavior, revisit `aw-domain` and downstream
    acceptance rather than burying a product decision in a code snippet.

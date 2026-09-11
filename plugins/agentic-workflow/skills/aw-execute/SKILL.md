@@ -10,7 +10,8 @@ graph run, inspect current state and distinguish `execute` from `repair`.
 
 1. Inspect the actual worktree and callers before editing. Preserve existing user
    work. Implement the accepted behavior with existing patterns and domain terms.
-2. Delegate only independent bounded tasks, with explicit edit ownership, input
+2. Use `aw-builder` and the [delegation policy](../../references/subagents.md).
+   Delegate only independent bounded tasks, with explicit edit ownership, input
    sources, acceptance criteria, and model/effort. Keep one coordinator as state
    writer. Workers are not alone: preserve others' changes and coordinate shared
    contracts. Avoid nested delegation. If tools lack subagents, work sequentially

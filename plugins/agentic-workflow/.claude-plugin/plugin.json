@@ -1,6 +1,8 @@
 {
   "name": "agentic-workflow",
-  "version": "0.1.0",
+  "version": "0.2.0+codex.20260911115124",
   "description": "Guided discovery, domain language, vertical slices, bounded reviews and resumable graph workflows.",
-  "author": {"name": "Alex Bako"}
+  "author": {
+    "name": "Alex Bako"
+  }
 }

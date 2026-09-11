@@ -1,7 +1,8 @@
 # Agentic Workflow
 
 The distributable plugin is `plugins/agentic-workflow`. Codex and Claude load the
-same skills; keep vendor-specific configuration in their manifests only.
+same skills. Keep vendor configuration in manifests and native agent profiles;
+shared delegation policy lives in references/subagents.md.
 
 Keep the helper Python-stdlib-only. It routes work and validates recorded evidence;
 the host coding agent performs the work. Do not add background agents, network

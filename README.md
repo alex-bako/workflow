@@ -44,6 +44,54 @@ claude plugin install agentic-workflow@agentic-workflow
 
 Start a new session and invoke `/agentic-workflow:aw-discover`.
 
+### Install focused agents and compaction policy
+
+After plugin installation, run once (also works from the plugin cache):
+
+```sh
+python3 ~/work/agentic-workflow/plugins/agentic-workflow/scripts/setup_agents.py \
+  --codex-home ~/.codex --claude-settings ~/.claude/settings.json
+```
+
+This installs five native Codex profiles and merges Claude's 200,000-token
+compaction window into settings. Codex profiles set a 200,000-token compaction
+trigger per worker, preserving the coordinator's threshold. Setup preserves unrelated settings, backs up changed
+Claude settings and refuses conflicting agent files. Merge customized profiles
+manually when upgrading. For project-only setup, use `--codex-home /project/.codex`
+and `--claude-settings /project/.claude/settings.json`. Either flag works alone.
+Restart both clients after setup; existing sessions keep their loaded configuration.
+
+Claude discovers the five profiles directly from the plugin. Codex uses its
+native agents directory; installing the skills alone does not install profiles.
+Neither client needs separate Caveman/Ponytail plugins: every profile embeds the
+core behavior, applying the full skills too when available.
+
+| Worker | Codex | Claude | Work |
+| --- | --- | --- | --- |
+| `aw-scout` | Luna / low | Haiku / low | Locate files, symbols and callers |
+| `aw-researcher` | Terra / medium | Sonnet / medium | Verify scoped facts |
+| `aw-builder` | Terra / medium | Sonnet / medium | Implement and test a bounded contract |
+| `aw-refuter` | Sol / high | Opus / high | Independently inspect and rerun checks |
+| `aw-debugger` | Sol / high | Opus / high | Diagnose hard root causes |
+
+The coordinator keeps your chosen model. Two workers maximum by default; exact
+file ownership, fresh contexts, compact briefs/reports, no recursive delegation.
+Tiny work stays local. Builders build; refuters verify without source edits.
+See [delegation policy](plugins/agentic-workflow/references/subagents.md) for exact
+model IDs, budgets, escalation, handoffs and portable worker instructions.
+
+**Claude limitation:** `CLAUDE_CODE_AUTO_COMPACT_WINDOW=200000` applies to the main
+session **and all subagents**, with default compaction around 190k tokens. There
+is no supported per-subagent environment setting. It does not make small models
+support larger contexts or guarantee a hard token ceiling. Setup refuses known
+settings-file compaction conflicts; shell/managed overrides still need checking.
+For a session-only trial without changing settings:
+
+```sh
+CLAUDE_CODE_AUTO_COMPACT_WINDOW=200000 claude \
+  --plugin-dir ~/work/agentic-workflow/plugins/agentic-workflow
+```
+
 ## Use it
 
 Run skills inside the project you want to develop. Start with a description:
@@ -169,6 +217,7 @@ at useful boundaries. Canonical docs and local run state remain usable without i
 
 Keep host-specific manifests separate. Do not copy the skills for each client or
 add a general agent scheduler until this fixed workflow demonstrably needs one.
+Keep native agent instructions aligned across `agents/` and `codex-agents/`.
 
 ```sh
 python3 -m unittest discover -s tests -v

@@ -7,7 +7,9 @@ description: Coordinate independent code reviews, adjudicate findings, perform s
 
 Read [the shared contract](../../references/workflow.md) and
 [review protocol](../../references/review.md). In `verify`, run final required
-checks; in `review`, coordinate independent read-only reviewers.
+checks; in `review`, coordinate independent `aw-refuter` agents using the
+[delegation policy](../../references/subagents.md). Refuters inspect source without
+editing it and independently rerun relevant checks; allow assigned test outputs.
 
 Review the acceptance criteria, domain invariants, changed behavior and affected
 callers on one frozen snapshot. The default perspectives are a specialized host

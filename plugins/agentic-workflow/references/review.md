@@ -9,9 +9,13 @@
 - Initial broad slice review or scoped rereview; for rereview include prior IDs,
   dispositions, repairs and affected integration paths.
 
-Require read-only review, no recursive reviewers, concrete impact and source
-locations. The reviewer must distinguish observed facts from assumptions and
-return explicit completion status. Do not count “I would run…” as a passed check.
+Require no source edits, no recursive reviewers, concrete impact and source
+locations. Use `aw-refuter` from [focused delegation](subagents.md), including its
+Caveman/Ponytail contract. Independently inspect the diff and rerun relevant
+checks; builder reports alone cannot establish verification. Allow only assigned
+test/evidence outputs. Parallel checks need isolated output paths or sequential
+execution if they share caches/databases. Distinguish observed facts from assumptions
+and return explicit completion status. “I would run…” is not a passed check.
 
 Use the native host subagent for `specialist` when available. Select expertise
 based on actual risk (for example authorization/SQL, Rust ownership or UI behavior).
@@ -20,15 +24,22 @@ use an available real Codex review path. If unavailable, record incomplete and
 explain the missing capability. Never replace independent review with a fictional
 persona while preserving its claimed identity.
 
-Claude example (check local `--help` for supported flags; model selected according
-to the project's role policy). Write the concrete brief to a file first:
+Claude example (check local `--help` for supported flags). Write the bounded brief
+to a file first. Native profile includes the compact worker rules and Opus model:
 
 ```sh
-claude -p --tools Read,Grep,Glob --max-turns 8 --output-format json < /path/to/review-brief.txt > /path/to/review-output.json
+CLAUDE_CODE_AUTO_COMPACT_WINDOW=200000 claude -p \
+  --agent agentic-workflow:aw-refuter --max-turns 16 --output-format json \
+  < /path/to/review-brief.txt > /path/to/review-output.json
 ```
 
-This restricts exposed tools to reading/searching. Check the actual environment's
-hooks, MCP and plugins before treating the invocation as isolated. Do not disable
+Requires the installed plugin (or add `--plugin-dir /path/to/plugin`). If the
+profile is unavailable, use `--model opus --tools Read,Grep,Glob,Bash,Write` with
+the full refuter instructions in the brief. Bash permits actual checks; it is
+not a read-only sandbox. The brief forbids source edits and Git mutations. Inherit
+host permissions, never broaden them for tests; unavailable checks are incomplete.
+Check the actual environment's hooks, MCP and plugins before treating the invocation
+as isolated. Do not disable
 the user's configuration globally. CLI output JSON is an envelope: inspect errors,
 termination reason and the returned review text/structured result. A zero shell
 exit alone is insufficient. Save raw output. No permissions bypass flags.

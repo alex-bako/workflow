@@ -52,13 +52,13 @@ Independent slices use separate task IDs and worktrees. Advance to the next slic
 only when dependencies are complete. A node is a unit of work, not a requirement
 to launch another agent. The same coordinator can perform lightweight nodes.
 
-The coordinator is the only checkpoint writer. Workers return results/artifact
-paths and never advance the graph. Select focused subagents only when available
-and allowed. Give each an explicit responsibility, relevant context, expected
-result, and model/effort appropriate to risk. Tell workers they are not alone and
-must preserve others' edits. Do not recursively delegate reviews or copy the full
-conversation by default. If independent review is required but unavailable, mark
-it incomplete rather than impersonating another model.
+The coordinator is the only checkpoint writer. Before delegation read
+[focused delegation](subagents.md): use its explicit scout/researcher/builder/
+refuter/debugger models, bounded brief, Caveman/Ponytail worker contract and
+two-worker default. Workers return results/artifact paths and never advance the
+graph. Keep product/architecture judgment with the coordinator; use fresh focused
+contexts for workers. If independent review is required but unavailable, mark it
+incomplete rather than impersonating another model.
 
 ## Memory and resumption
 
