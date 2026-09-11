@@ -31,6 +31,12 @@ Read [the shared contract](../../references/workflow.md) and
    conflicting requirements. Propose a concrete revised plan. Replanning retains
    the repair count; starting a new slice is the only normal counter reset.
 
-At done, report verified slice completion and existing PR status. If a milestone
-is authorized, select the next dependency-ready slice and record outcome `next`.
-Otherwise stop. Neither resumption nor completion authorizes merging/deployment.
+At `ready`, follow [delivery policy](../../references/delivery.md): continue the
+next authorized bullet, finish local-only delivery, or publish/reuse the PR and
+enter `pr_review`. Never stop successfully just because a PR was created. Resume
+pending reviewer/run IDs against the actual current head; repair, amend the owning
+bullet and recheck the same PR until remote coverage is complete. For old saved
+graphs, apply the documented compatibility protocol without resetting budgets.
+At done, report verified completion and PR review/check evidence. A milestone may
+continue with the next dependency-ready slice. Neither completion nor resumption
+authorizes merging/deployment.

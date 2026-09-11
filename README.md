@@ -131,6 +131,13 @@ For authorized implementation:
 Each skill works independently. A request to plan does not start implementation.
 The full graph is useful for multi-stage work and cross-client handoffs.
 
+Before committing/pushing, the workflow keeps each review repair in its original
+tracer-bullet commit: review uncommitted work by default, or amend local provisional
+commits. Published fixes are folded into owned bullet commits under the branch's
+history policy. PR creation starts the remote review phase; it does not finish it.
+See [delivery policy](plugins/agentic-workflow/references/delivery.md) and
+[graph evidence/migration](plugins/agentic-workflow/references/runtime.md#delivery-and-remote-review-evidence).
+
 ## The two graphs
 
 ```mermaid
@@ -143,7 +150,13 @@ flowchart LR
   V -->|clean| T[Final checks]
   V -->|valid findings| F[Repair]
   F --> V
-  T -->|pass| Done[Slice done]
+  T -->|pass| Ready[Locally verified]
+  Ready -->|local-only finish| Done[Done]
+  Ready -->|publish or update PR| PR[Wait for remote reviews]
+  PR -->|pending| PR
+  PR -->|valid findings| F
+  PR -->|reviews complete and checks pass| Done
+  Ready -->|next authorized slice| P
   T -->|fail| F
   V -->|attempt limit| X[Diagnose / decision]
   F -->|repair limit| X

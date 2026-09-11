@@ -76,7 +76,7 @@ def validate_graph(graph):
     reviewers = graph.get("required_reviewers")
     require(isinstance(reviewers, list) and reviewers and all(isinstance(r, str) and r for r in reviewers) and len(set(reviewers)) == len(reviewers), "Required reviewer IDs must be unique and nonempty")
     for name, node in nodes.items():
-        require(node.get("gate") in {"artifacts", "review", "tests", "decision", "next"}, f"Unknown gate at {name}")
+        require(node.get("gate") in {"artifacts", "review", "tests", "decision", "next", "delivery", "pull_request"}, f"Unknown gate at {name}")
         require(isinstance(node.get("skill"), str) and isinstance(node.get("role"), str), f"Missing skill/role at {name}")
         require(isinstance(node.get("edges"), dict) and all(target in nodes for target in node["edges"].values()), f"Invalid edges at {name}")
     return graph
@@ -91,12 +91,12 @@ def artifact_paths(project, evidence):
         require(path.is_relative_to(project) and path.is_file(), f"Missing or external artifact: {name}")
 
 
-def check_review(state, evidence, current):
+def check_review(state, evidence, current, required_reviewers=None):
     reviews = evidence.get("reviews")
     require(isinstance(reviews, list), "reviews must be a list")
     ids = [r.get("reviewer") for r in reviews]
     require(len(ids) == len(set(ids)), "Duplicate reviewer IDs")
-    require(set(state["graph"]["required_reviewers"]) <= set(ids), "Required independent review is missing")
+    require(set(required_reviewers if required_reviewers is not None else state["graph"]["required_reviewers"]) <= set(ids), "Required independent review is missing")
     ledger = dict(state.get("findings", {}))
     for review in reviews:
         require(review.get("status") == "complete", "Failed/incomplete review is not clean")
@@ -118,14 +118,44 @@ def advance(state, outcome, evidence, current):
     require(isinstance(evidence, dict) and isinstance(evidence.get("summary"), str) and evidence["summary"].strip(), "Evidence needs a nonempty summary")
     target = node["edges"][outcome]
     gate = node["gate"]
+    if gate == "delivery":
+        if outcome == "finish":
+            require(state.get("delivery", "local") == "local" and not state.get("pull_request"), "PR delivery must wait for remote reviews")
+        elif outcome == "published":
+            pr = evidence.get("pull_request", {})
+            require(pr.get("url") and pr.get("head") == current["head"], "PR must identify the published current HEAD")
+            require(not git(Path(state["project"]), "status", "--porcelain"), "Publish requires a clean worktree")
+            for key in ("reviewers", "checks"):
+                values = pr.get(key)
+                require(isinstance(values, list) and all(isinstance(v, str) and v.strip() for v in values) and len(values) == len(set(values)), f"PR {key} must be unique names")
+            require(pr["reviewers"], "Record expected remote reviewers; an empty inbox is not completion")
+            old = state.get("pull_request")
+            if old:
+                require(pr["url"] == old["url"] and set(old["reviewers"]) <= set(pr["reviewers"]) and set(old["checks"]) <= set(pr["checks"]), "Keep the existing PR and required coverage across repairs")
+            state["pull_request"] = pr
+            state["delivery"] = "pull-request"
+    if gate == "pull_request":
+        pr = state["pull_request"]
+        require(evidence.get("head") == pr["head"] == current["head"], "Remote review evidence is for another HEAD")
+        require(evidence.get("evidence"), "Remote status needs its fetched output reference")
+        if outcome == "pending":
+            require(evidence.get("next_action"), "Pending reviews need a resumable next action")
+        if outcome == "clean":
+            require(evidence.get("inbox_complete") is True and evidence.get("pending_reviews") == [], "Read all review/comment pages and wait for pending reviewers")
+            check_review(state, evidence, current, pr["reviewers"])
+            checks = evidence.get("checks")
+            require(isinstance(checks, list) and set(pr["checks"]) <= {c.get("name") for c in checks}, "Required remote check is missing")
+            for check in checks:
+                require(check.get("head") == current["head"] and check.get("evidence") and check.get("status") == "success", "Remote check is stale, pending or unsuccessful")
     if outcome == "complete" and gate == "artifacts":
         artifact_paths(Path(state["project"]), evidence)
         if state["node"] == "plan":
             checks = evidence.get("required_checks")
             require(isinstance(checks, list) and checks and all(isinstance(c, str) and c.strip() for c in checks), "Plan must name required check commands")
             state["required_checks"] = list(dict.fromkeys(checks))
-    if gate == "review":
-        state["review_attempts"] += 1
+    if gate == "review" or (gate == "pull_request" and outcome in {"fix", "incomplete"}):
+        if outcome != "clean":
+            state["review_attempts"] += 1
         if outcome == "fix":
             findings = evidence.get("findings")
             require(isinstance(findings, list) and findings, "Fix outcome needs adjudicated findings")
@@ -154,18 +184,20 @@ def advance(state, outcome, evidence, current):
             require(evidence.get("authorization"), "Extending a review budget needs the user's authorization reference")
             graph["max_repairs"] += additional
             graph["max_review_attempts"] = graph.get("max_review_attempts", state["review_attempts"]) + additional + 1
-    if gate == "next":
+    if gate == "next" or (gate == "delivery" and outcome == "next"):
+        require(not state.get("pull_request") or state["node"] == "done", "Finish pending PR reviews before starting another slice")
         require(isinstance(evidence.get("slice"), str) and evidence["slice"].strip() and evidence["slice"] != state["slice"], "Next requires a different slice ID")
         state["slice"] = evidence["slice"]
         state["repair_rounds"] = state["review_attempts"] = 0
         state.pop("reviewed_fingerprint", None)
         state.pop("required_checks", None)
         state["findings"] = {}
+        state.pop("pull_request", None)
     if target == "repair":
         state["repair_rounds"] += 1
         state.pop("reviewed_fingerprint", None)
     limit = graph.get("max_review_attempts", graph["max_repairs"] + 2)
-    if (target == "repair" and state["repair_rounds"] > graph["max_repairs"]) or (gate == "review" and outcome != "clean" and state["review_attempts"] >= limit):
+    if (target == "repair" and state["repair_rounds"] > graph["max_repairs"]) or (gate in {"review", "pull_request"} and outcome in {"fix", "incomplete", "replan"} and state["review_attempts"] >= limit):
         target = "escalate"
     state["history"].append({"node": state["node"], "outcome": outcome, "target": target,
                              "evidence": evidence, "snapshot": current, "at": now()})
@@ -240,8 +272,9 @@ def main():
     init = sub.add_parser("init")
     init.add_argument("task")
     init.add_argument("--slice", default="discovery")
+    init.add_argument("--delivery", choices=("local", "pull-request"), default="local")
     init.add_argument("--graph", default=str(PLUGIN / "graphs/development.json"))
-    for command in ["status", "advance", "note", "recover"]:
+    for command in ["status", "advance", "note", "recover", "upgrade-delivery"]:
         cmd = sub.add_parser(command)
         cmd.add_argument("task")
         if command != "status":
@@ -274,8 +307,9 @@ def main():
         if args.command == "init":
             require(not path.exists(), "Task already exists; use status/resume")
             graph = validate_graph(read(args.graph))
+            require(args.delivery != "pull-request" or all(n in graph["nodes"] for n in ("ready", "pr_review")), "PR delivery needs the delivery graph nodes")
             state = {"version": 1, "task": args.task, "slice": args.slice, "project": str(project),
-                     "graph": graph, "node": graph["start"], "revision": 0,
+                     "graph": graph, "node": graph["start"], "revision": 0, "delivery": args.delivery,
                      "snapshot": current, "repair_rounds": 0, "review_attempts": 0, "history": []}
             atomic_write(path, state)
         else:
@@ -286,18 +320,31 @@ def main():
                 evidence = json.load(sys.stdin) if args.evidence == "-" else read(args.evidence)
                 if args.command == "advance":
                     # Working edits are expected in these nodes, but not during frozen review/verification.
-                    if state["node"] in {"review", "verify", "done"}:
+                    if state["node"] in {"review", "verify", "ready", "pr_review", "done"}:
                         require(current == state["snapshot"], "Work changed during review/verification; use recover before advancing")
                     state = advance(state, args.outcome, evidence, current)
                 else:
                     require(isinstance(evidence, dict) and evidence.get("next_action"), "Checkpoint needs next_action")
+                    event_node = state["node"]
+                    if args.command == "upgrade-delivery":
+                        nodes = state["graph"]["nodes"]
+                        require("ready" not in nodes and "pr_review" not in nodes and nodes.get("verify", {}).get("gate") == "tests" and nodes["verify"].get("edges", {}).get("pass") == "done" and nodes.get("done", {}).get("gate") == "next" and nodes["done"].get("edges") == {"next": "plan"}, "Not a compatible legacy delivery graph; inspect custom graph manually")
+                        require(current == state["snapshot"], "Recover changed work before migrating the graph")
+                        require(evidence.get("delivery") in {"local", "pull-request"}, "Migration must record delivery scope")
+                        new_nodes = read(PLUGIN / "graphs/development.json")["nodes"]
+                        nodes.update({name: new_nodes[name] for name in ("ready", "pr_review")})
+                        nodes["verify"]["edges"]["pass"] = "ready"
+                        validate_graph(state["graph"])
+                        state["delivery"] = evidence["delivery"]
+                        if state["node"] == "done":
+                            state["node"] = "ready"
                     if args.command == "recover":
                         require(evidence.get("reason"), "Recovery needs an explanation of changed work")
-                        if state["node"] in {"review", "verify", "done"}:
+                        if state["node"] in {"review", "verify", "ready", "pr_review", "done"}:
                             state["node"] = "review"
                         state.pop("reviewed_fingerprint", None)
                         state["snapshot"] = current
-                    state["history"].append({"node": state["node"], "outcome": args.command, "evidence": evidence, "snapshot": current, "at": now()})
+                    state["history"].append({"node": event_node, "target": state["node"], "outcome": args.command, "evidence": evidence, "snapshot": current, "at": now()})
                     state["revision"] += 1
                 atomic_write(path, state)
         node = state["graph"]["nodes"][state["node"]]
@@ -307,6 +354,7 @@ def main():
                 "work_changed": current != state["snapshot"], "current_snapshot": current,
                 "repair_rounds": state["repair_rounds"], "review_attempts": state["review_attempts"],
                 "findings": state.get("findings", {}),
+                "delivery": state.get("delivery", "local"), "pull_request": state.get("pull_request"),
                 "last_event": state["history"][-1] if state["history"] else None}
 
 

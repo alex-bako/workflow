@@ -5,7 +5,7 @@ background hooks or network calls. Find the plugin root from the loaded SKILL.md
 run the helper by absolute path while targeting the user's project explicitly.
 
 ```sh
-python3 /path/to/plugin/scripts/workflow.py --project /path/to/project init feature-name --slice M1.T1
+python3 /path/to/plugin/scripts/workflow.py --project /path/to/project init feature-name --slice M1.T1 --delivery pull-request
 python3 /path/to/plugin/scripts/workflow.py --project /path/to/project status feature-name
 python3 /path/to/plugin/scripts/workflow.py --project /path/to/project snapshot
 ```
@@ -13,6 +13,8 @@ python3 /path/to/plugin/scripts/workflow.py --project /path/to/project snapshot
 `status` returns node, skill, role, allowed outcomes, revision, current snapshot,
 changed-work flag, last event and the complete state file path. Load that state
 file when you need older findings or handoff notes. `list` locates existing runs.
+Use `--delivery pull-request` only when PR delivery is authorized; default `local`
+stops after local acceptance.
 The state stores a copy of the orchestration graph; plugin upgrades do not silently
 change an active run. Separate worktrees share the run directory but each task
 is bound to one worktree. Use a unique task ID per independently running slice.
@@ -91,7 +93,7 @@ agent/process/PR identifiers and relevant artifact paths. It retains the origina
 snapshot, so taking a note cannot hide unexpected changes during review.
 
 `recover` requires `next_action` and `reason`. Inspect changed work first. It
-invalidates clean-review coverage and routes frozen review/verify/done nodes back
+invalidates clean-review coverage and routes frozen review/verify/ready/pr_review/done nodes back
 to review. It does not edit working files or reset repair/review counters.
 
 The fingerprint covers HEAD, index entries, tracked working files (including
@@ -115,11 +117,87 @@ Default: two repair rounds; four non-clean review attempts at most before
 escalation. `escalate → replan` needs `summary`, `decision`, and `next_action`.
 Replanning does not reset counters. Only after an explicit user-authorized budget
 extension may that evidence include positive `additional_repairs` plus an
-`authorization` reference. A new slice (`done → next`, with `slice`) resets counts.
+`authorization` reference. A new slice (`ready/done → next`, with `slice`) resets counts. Pending PRs must
+complete before moving to another slice.
 
 For project-specific nodes or reviewers, copy `graphs/development.json` into the
 project, edit explicit edges/skill/role/gate, then initialize with `--graph PATH`.
-Available gates are artifacts, review, tests, decision and next. Preserve the
+Available gates are artifacts, review, tests, decision, next, delivery and
+pull_request. Preserve the
 standard plan/review/repair/verify/escalate/done semantics; custom nodes normally
 use the artifact gate. Keep required reviewers explicit and add a behavioral test
 for any new route. Graph extensions cannot grant tool or external-action authority.
+
+## Delivery and remote review evidence
+
+Follow [delivery policy](delivery.md) for Git ownership, waiting and adjudication.
+`verify pass` now returns `ready`. Local-only scope uses `finish`; a milestone may
+use `next` before publishing. PR scope cannot use `finish`. After actual publishing
+or updating the same PR, `ready published` records:
+
+```json
+{
+  "summary": "Verified bullet commits published; remote reviews pending.",
+  "pull_request": {
+    "url": "https://github.com/OWNER/REPO/pull/NUMBER",
+    "head": "CURRENT_COMMIT_SHA",
+    "reviewers": ["configured-review-bot"],
+    "checks": ["required-ci-job"]
+  }
+}
+```
+
+Use actual reviewer/check identities, not the example names. Reviewers cannot be
+empty; checks may be empty only when project policy actually requires none.
+The helper requires a clean worktree and matching local HEAD. The host verifies
+the remote head and policy; the helper makes no network calls. Publication records
+preserve reviewer/check requirements across repairs and allow newly required
+reviewers/checks to be added. Reducing the recorded coverage is rejected.
+
+At `pr_review`, use `pending` with `head`, fetched-output `evidence` and
+`next_action`; a pending state never means completion. Unchanged polls need no
+new event. `incomplete` records failed review retrieval/execution, consumes a
+review attempt and can escalate. `fix` also needs the normal actionable `findings`
+list; include the owning bullet and original remote IDs in each finding/reason.
+Repair follows the existing local graph, then publish the new head and wait again.
+
+`pr_review clean` requires:
+
+```json
+{
+  "summary": "All expected remote reviews and latest-head checks completed.",
+  "head": "CURRENT_COMMIT_SHA",
+  "evidence": "/path/to/final-paginated-inbox.json",
+  "inbox_complete": true,
+  "pending_reviews": [],
+  "reviews": [{
+    "reviewer": "configured-review-bot", "status": "complete",
+    "fingerprint": "CURRENT_SNAPSHOT_VALUE",
+    "evidence": "/path/to/actual-remote-review.json", "findings": []
+  }],
+  "checks": [{
+    "name": "required-ci-job", "status": "success",
+    "head": "CURRENT_COMMIT_SHA", "evidence": "/path/to/ci-result.json"
+  }]
+}
+```
+
+Include every incoming reviewer/finding, not just expected reviewers; adjudicate
+with the normal ledger rules. Required checks must pass, and listed extra checks
+must also be successful. A skipped/cancelled required job needs investigation,
+not an invented success. Latest-head association and full inbox coverage are host
+attestations backed by fetched outputs. The helper validates their structure,
+expected coverage and snapshot; it cannot prove a remote review was fetched.
+
+To migrate a compatible old saved graph without resetting the run:
+
+```sh
+python3 /path/to/plugin/scripts/workflow.py --project /path/to/project upgrade-delivery feature-name --revision REVISION --evidence /path/to/migration.json
+```
+
+Evidence: `{"delivery":"pull-request","next_action":"Record existing PR and wait for its reviews"}`.
+Recover changed work first. This adds delivery nodes, redirects verification to
+ready, and moves old done to ready while preserving history, counters and findings.
+It refuses graphs already migrated or with incompatible delivery edges. Inspect
+custom graph semantics before any manual migration. Existing PR operations remain
+subject to the same authorization as before the upgrade.

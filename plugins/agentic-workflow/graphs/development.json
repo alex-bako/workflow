@@ -11,8 +11,10 @@
     "execute": {"skill": "aw-execute", "role": "implementer", "gate": "artifacts", "edges": {"complete": "review"}},
     "review": {"skill": "aw-review", "role": "review-coordinator", "gate": "review", "edges": {"clean": "verify", "fix": "repair", "incomplete": "review", "replan": "plan"}},
     "repair": {"skill": "aw-execute", "role": "focused-repairer", "gate": "artifacts", "edges": {"complete": "review", "replan": "plan"}},
-    "verify": {"skill": "aw-review", "role": "verification-coordinator", "gate": "tests", "edges": {"pass": "done", "fail": "repair"}},
+    "verify": {"skill": "aw-review", "role": "verification-coordinator", "gate": "tests", "edges": {"pass": "ready", "fail": "repair"}},
     "escalate": {"skill": "aw-resume", "role": "diagnostician", "gate": "decision", "edges": {"replan": "plan"}},
-    "done": {"skill": "aw-resume", "role": "coordinator", "gate": "next", "edges": {"next": "plan"}}
+    "done": {"skill": "aw-resume", "role": "coordinator", "gate": "next", "edges": {"next": "plan"}},
+    "ready": {"skill": "aw-resume", "role": "delivery-coordinator", "gate": "delivery", "edges": {"next": "plan", "finish": "done", "published": "pr_review"}},
+    "pr_review": {"skill": "aw-review", "role": "remote-review-coordinator", "gate": "pull_request", "edges": {"pending": "pr_review", "incomplete": "pr_review", "fix": "repair", "clean": "done"}}
   }
 }

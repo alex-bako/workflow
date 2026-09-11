@@ -28,5 +28,10 @@ Use the run's repair/attempt limits and stop for diagnosis when exhausted.
 
 For final verification, check required reviews still cover the current snapshot,
 all acceptance criteria are satisfied, and required checks passed. Record actual
-command results. Disclose unverified environments. Route to done/ready only when
+command results. Disclose unverified environments. Route to ready only when
 all required evidence is complete; otherwise repair or escalate.
+
+At `pr_review`, follow [delivery policy](../../references/delivery.md): wait for
+expected remote reviews, inspect all incoming findings and checks on the latest
+head, repair valid findings in their original bullet, and update/recheck the same
+PR. PR creation, green CI alone and an empty inbox are not completion.

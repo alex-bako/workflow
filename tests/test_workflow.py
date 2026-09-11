@@ -40,8 +40,8 @@ class RunTests(unittest.TestCase):
         state = self.cli("status", "sample")
         return self.cli("advance", "sample", outcome, "--revision", str(state["revision"]), "--evidence", "-", evidence=evidence, success=success)
 
-    def reach_review(self):
-        self.cli("init", "sample", "--slice", "M1.T1")
+    def reach_review(self, delivery="local"):
+        self.cli("init", "sample", "--slice", "M1.T1", "--delivery", delivery)
         for _ in range(5):
             self.advance("complete", {"summary": "Stage evidence inspected", "artifacts": ["scope.md"], "required_checks": ["python3 app.py", "git diff --check"]})
         return self.cli("status", "sample")
@@ -65,7 +65,8 @@ class RunTests(unittest.TestCase):
         missing["checks"].pop()
         self.advance("pass", missing, success=False)
         self.assertEqual(self.cli("status", "sample")["node"], "verify")
-        self.assertEqual(self.advance("pass", self.checks())["node"], "done")
+        self.assertEqual(self.advance("pass", self.checks())["node"], "ready")
+        self.assertEqual(self.advance("finish", {"summary": "Local-only delivery complete"})["node"], "done")
         self.assertEqual(self.advance("next", {"summary": "Next dependency-ready slice", "slice": "M1.T2"})["node"], "plan")
 
     def test_illegal_transition_and_stale_writer_leave_state_unchanged(self):
@@ -101,7 +102,99 @@ class RunTests(unittest.TestCase):
         self.assertEqual((self.project / "app.py").read_text(), "value = 2\n")
         self.advance("clean", self.clean())
         self.advance("pass", old_checks, success=False)
-        self.assertEqual(self.advance("pass", self.checks())["node"], "done")
+        self.assertEqual(self.advance("pass", self.checks())["node"], "ready")
+
+    def publish(self, reviewers=None, checks=None, success=True):
+        head = self.cli("snapshot")["head"]
+        return self.advance("published", {"summary": "Published verified slice", "pull_request": {
+            "url": "https://github.com/example/project/pull/1", "head": head,
+            "reviewers": reviewers if reviewers is not None else ["remote-reviewer"],
+            "checks": checks if checks is not None else ["ci"]}}, success=success)
+
+    def remote_clean(self):
+        current = self.cli("snapshot")
+        return {"summary": "Remote inbox and checks inspected", "head": current["head"],
+                "evidence": "remote-inbox.json", "inbox_complete": True, "pending_reviews": [],
+                "reviews": [{"reviewer": "remote-reviewer", "status": "complete",
+                             "fingerprint": current["fingerprint"], "evidence": "remote-review.json", "findings": []}],
+                "checks": [{"name": "ci", "status": "success", "head": current["head"], "evidence": "ci.json"}]}
+
+    def test_pr_creation_and_empty_stale_or_pending_reviews_cannot_finish(self):
+        self.reach_review("pull-request")
+        self.advance("clean", self.clean())
+        self.advance("pass", self.checks())
+        self.advance("finish", {"summary": "PR created, stop now"}, success=False)
+        self.assertEqual(self.publish()["node"], "pr_review")
+        self.assertEqual(self.cli("status", "sample")["review_attempts"], 0)
+        head = self.cli("snapshot")["head"]
+        for _ in range(5):
+            self.assertEqual(self.advance("pending", {"summary": "Reviewer queued", "head": head,
+                "evidence": "queue.json", "next_action": "Wait for remote-reviewer"})["node"], "pr_review")
+        for key, value in [("reviews", []), ("head", "old"), ("inbox_complete", False), ("pending_reviews", ["remote-reviewer"]), ("checks", [])]:
+            evidence = self.remote_clean(); evidence[key] = value
+            self.advance("clean", evidence, success=False)
+        for status in ("pending", "failure"):
+            evidence = self.remote_clean(); evidence["checks"][0]["status"] = status
+            self.advance("clean", evidence, success=False)
+        self.assertEqual(self.advance("clean", self.remote_clean())["node"], "done")
+
+    def test_remote_finding_is_repaired_amended_and_reviewed_on_new_head(self):
+        self.reach_review("pull-request")
+        self.advance("clean", self.clean()); self.advance("pass", self.checks()); self.publish()
+        old = self.remote_clean()
+        self.assertEqual(self.advance("fix", {"summary": "Valid remote finding", "head": old["head"],
+            "evidence": "remote-review.json", "findings": [{"id": "PR1", "disposition": "actionable", "reason": "M1.T1 invariant broken"}]})["node"], "repair")
+        (self.project / "app.py").write_text("value = 2\n")
+        count = self.git("rev-list", "--count", "HEAD")
+        self.git("add", "app.py"); self.git("commit", "--amend", "--no-edit")
+        self.assertEqual(self.git("rev-list", "--count", "HEAD"), count)
+        self.advance("complete", {"summary": "M1.T1 commit amended with repair", "artifacts": ["app.py"]})
+        self.advance("clean", self.clean(), success=False)
+        evidence = self.clean(); evidence["reviews"][0]["findings"] = [{"id": "PR1", "disposition": "resolved", "reason": "Repair and regression checked"}]
+        self.advance("clean", evidence); self.advance("pass", self.checks())
+        self.assertEqual(self.cli("status", "sample")["review_attempts"], 1)
+        self.advance("finish", {"summary": "Local fix done"}, success=False)
+        self.advance("next", {"summary": "Skip pending PR", "slice": "M1.T2"}, success=False)
+        self.publish(reviewers=["remote-reviewer", "security-bot"], checks=["ci", "lint"])
+        self.advance("clean", old, success=False)
+        self.advance("clean", self.remote_clean(), success=False)
+        evidence = self.remote_clean()
+        evidence["reviews"].append({**evidence["reviews"][0], "reviewer": "security-bot"})
+        evidence["checks"].append({**evidence["checks"][0], "name": "lint"})
+        self.assertEqual(self.advance("clean", evidence)["node"], "done")
+
+    def test_legacy_graph_upgrade_preserves_history_and_budgets(self):
+        self.reach_review()
+        status = self.cli("status", "sample")
+        path = Path(status["state_path"]); state = json.loads(path.read_text())
+        for name in ("ready", "pr_review"):
+            state["graph"]["nodes"].pop(name)
+        state["graph"]["nodes"]["verify"]["edges"]["pass"] = "done"
+        state["node"] = "done"; state["repair_rounds"] = 2
+        state["findings"] = {"R1": {"id": "R1", "disposition": "resolved", "reason": "Verified"}}
+        path.write_text(json.dumps(state))
+        result = self.cli("upgrade-delivery", "sample", "--revision", str(state["revision"]), "--evidence", "-",
+            evidence={"delivery": "pull-request", "next_action": "Record existing PR and wait for reviews"})
+        self.assertEqual(result["node"], "ready")
+        self.assertEqual(result["repair_rounds"], 2)
+        upgraded = json.loads(path.read_text())
+        self.assertEqual(upgraded["history"][:-1], state["history"])
+        self.assertEqual(upgraded["history"][-1]["node"], "done")
+        self.assertEqual(upgraded["history"][-1]["target"], "ready")
+        self.assertEqual(upgraded["findings"], state["findings"])
+        self.advance("finish", {"summary": "Cannot skip remote review after migration"}, success=False)
+
+    def test_legacy_upgrade_rejects_changed_custom_routing_without_writes(self):
+        status = self.cli("init", "sample")
+        path = Path(status["state_path"]); state = json.loads(path.read_text())
+        for name in ("ready", "pr_review"):
+            state["graph"]["nodes"].pop(name)
+        state["graph"]["nodes"]["verify"]["edges"]["pass"] = "done"
+        state["graph"]["nodes"]["done"]["edges"]["next"] = "discovery"
+        path.write_text(json.dumps(state)); before = path.read_bytes()
+        self.cli("upgrade-delivery", "sample", "--revision", "0", "--evidence", "-",
+            evidence={"delivery": "pull-request", "next_action": "Migrate"}, success=False)
+        self.assertEqual(path.read_bytes(), before)
 
     def test_repair_limit_escalates_and_replan_does_not_reset_it(self):
         self.reach_review()

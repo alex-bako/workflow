@@ -46,7 +46,9 @@ also run standalone without initializing a graph. A standalone stage does not
 authorize implementation or any later stage.
 
 The default lifecycle is discovery → domain → roadmap → plan → execute → review
-→ verify → done, with repair, replan and escalation edges. Reviewers may run
+→ verify → ready, with repair, replan and escalation edges.
+PR delivery continues ready → pr_review → done; local-only delivery may finish
+at ready. Read [delivery policy](delivery.md) before any commit/push/PR operation. Reviewers may run
 concurrently on one frozen snapshot; join all required results before advancing.
 Independent slices use separate task IDs and worktrees. Advance to the next slice
 only when dependencies are complete. A node is a unit of work, not a requirement
@@ -84,6 +86,8 @@ findings. An unavailable tool, budget cap, timeout or parse error is incomplete.
 The repair limit triggers diagnosis, never success. Keep advisories/rejections
 with reasons so they are not rediscovered without new evidence.
 
-Ready-for-PR is distinct from merged/deployed. Create a PR when within the user's
-requested scope; reuse an existing PR rather than duplicating it. Do not assume
+Ready-for-PR is distinct from task completion. Keep local review repairs in their
+original bullet commits; do not push provisional work. When PR delivery is in
+scope, create/reuse the PR and wait for incoming reviews, fix valid findings and
+verify the latest head before done. Follow [delivery policy](delivery.md). Do not assume
 authorization to merge, publish, deploy, or message others from a plan/review task.

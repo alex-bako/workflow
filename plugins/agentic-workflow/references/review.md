@@ -79,3 +79,7 @@ examples, terminology/invariants and changed interfaces. Check integration effec
 across completed slices when finishing a milestone. Reuse CI/local evidence only
 when code, environment and command scope still match. Do not duplicate a broad
 local and CI model review automatically when both would examine the same inputs.
+
+For commit ownership and post-publication feedback, follow [delivery policy](delivery.md).
+Local verification routes to ready; PR delivery remains active through remote
+review completion. Preserve the same finding IDs and budgets across both phases.

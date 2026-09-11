@@ -36,3 +36,7 @@ graph run, inspect current state and distinguish `execute` from `repair`.
 Report what changed and what evidence supports it. Continue through graph nodes
 when the user's broader implementation request authorizes that; otherwise stop
 at the requested boundary. A repair cap means diagnose/replan, not declare done.
+
+Before committing or pushing, follow [delivery policy](../../references/delivery.md).
+Keep review repairs in their original tracer-bullet commit. Default to uncommitted
+local review; provisional commits stay local and are amended before publication.
