@@ -1,265 +1,154 @@
 # Agentic Workflow
 
-One plugin for Codex and Claude Code. Shared skills guide product discovery,
-DDD ubiquitous language, vertical-slice planning, implementation, independent
-review, and resumption. A small Python helper records execution graph state and
-queries an optional project knowledge graph.
+One plugin for **Claude Code and Codex**: turn an idea into a plan, implement it in
+small vertical slices, review the work, and resume where you left off.
 
-No model API keys, pip dependencies, background hooks, or graph server required.
-The coding host executes the agents; this plugin supplies skills, routes and
-evidence checks. It does not run an unattended scheduler by itself.
+## Everyday use
 
-## Install locally
+Open your project's repository or worktree in your coding tool. Use the commands
+below in **Claude Code**. In **Codex**, replace `/agentic-workflow:aw-feature` with
+`$aw-feature`, and use the same pattern for the other skills. You can also say
+“Use aw-feature…” in plain language.
 
-The repository is the marketplace; the plugin is `plugins/agentic-workflow`.
-These commands are installation instructions, not actions performed by cloning it.
+### 1. Plan a new feature or app
 
-### Codex
-
-```sh
-codex plugin marketplace add ~/work/agentic-workflow
-codex plugin add agentic-workflow@personal
+```text
+/agentic-workflow:aw-feature I want to add team invitations to my app.
 ```
 
-The repository's Codex marketplace is named `personal`, following the scaffold
-default. It is distinct from an implicitly discovered home-directory marketplace.
-If you already have another marketplace named `personal`, resolve that naming
-collision before registering this one. Open a new task after installation and
-select an `aw-*` skill from the skill picker (or invoke `$aw-discover`).
+Just describe your idea. The skill already knows to:
 
-### Claude Code
+- Act as both a Product Engineer and a Senior Staff Engineer.
+- Ask one material question at a time and reuse your answers.
+- Establish domain vocabulary, examples, business rules and relevant boundaries.
+- Produce the PRD, product roadmap and milestone files, including vertical tracer
+  bullets, dependencies and acceptance criteria.
 
-For a session-local trial without permanent installation:
+**Planning stops before implementation.** You do not need to repeat these
+instructions in your prompt. Existing project documents and naming are reused.
 
-```sh
-claude --plugin-dir ~/work/agentic-workflow/plugins/agentic-workflow
+### 2. Prepare a specific tracer bullet
+
+```text
+/agentic-workflow:aw-plan Plan U2.2.T1 from docs/plans/U2-PLAN.md.
 ```
 
-Or install from the local marketplace:
+Replace the ID and file path with yours. This checks current code and dependencies,
+then produces the detailed implementation plan, important contract snippets and
+verification steps. Use it when the selected bullet still needs detailed planning.
+
+### 3. Implement a planned card or tracer bullet
+
+```text
+/agentic-workflow:aw-resume Implement U2.2 from docs/plans/U2-PLAN.md.
+Run tests and reviews, commit and push the feature branch, and create or
+update its PR. Address incoming PR reviews. Do not merge.
+```
+
+The coordinator reconciles the plan with current progress, reuses the matching
+run, and works through the selected scope. Review fixes stay with their original
+tracer-bullet commits. PR creation starts the remote review phase; completion
+requires the expected reviews and latest-head checks to finish without unresolved
+actionable findings. A blocker or exhausted repair budget remains unfinished.
+
+For local-only work, replace the publication instructions with **“Local changes
+and reviews only; do not commit, push or create a PR.”**
+
+### 4. Resume interrupted work
+
+```text
+/agentic-workflow:aw-resume Continue U2.2 from its saved workflow state.
+```
+
+Use the same worktree and include the saved task ID if several runs exist. This
+continues the saved interview, implementation or review state within its existing
+authorization. Planning runs stay planning-only until you request implementation.
+
+## Which skill should I use?
+
+Most work starts with **aw-feature** or continues with **aw-resume**. The individual
+stages are also available when you only need one part:
+
+| Skill | Use it for |
+| --- | --- |
+| `aw-feature` | An idea-to-planning interview, including domain and milestone documents |
+| `aw-discover` | A PRD only |
+| `aw-domain` | Domain vocabulary, examples, invariants and boundaries |
+| `aw-roadmap` | A roadmap and milestone files from accepted requirements |
+| `aw-plan` | A detailed plan for one tracer bullet |
+| `aw-execute` | A bounded implementation or repair stage |
+| `aw-review` | Independent reviews, finding adjudication and verification |
+| `aw-resume` | Coordinate or resume the complete authorized workflow |
+| `aw-context` | Retrieve relevant Mem0 context and prepare worker briefs |
+
+## First-time setup
+
+You need Git, Python 3.10+ and macOS or Linux. Install and authenticate the coding
+clients you will use. The default cross-model review requires **both Claude Code
+and Codex**. Configure **Mem0 in both clients** for shared recall; this plugin does
+not provision Mem0 or supply its credentials.
+
+Clone the repository once:
+
+```sh
+git clone https://github.com/alex-bako/workflow.git ~/work/agentic-workflow
+```
+
+Register the plugin with each client you use:
+
+**Claude Code**
 
 ```sh
 claude plugin marketplace add ~/work/agentic-workflow
 claude plugin install agentic-workflow@agentic-workflow
 ```
 
-Start a new session and invoke `/agentic-workflow:aw-discover`.
+**Codex**
 
-### Install focused agents and compaction policy
+```sh
+codex plugin marketplace add ~/work/agentic-workflow
+codex plugin add agentic-workflow@personal
+```
 
-After plugin installation, run once (also works from the plugin cache):
+This repository's Codex marketplace is named `personal`. If that name already
+belongs to another marketplace, resolve the collision before registering it.
+
+Install the focused Codex agent profiles and Claude compaction setting:
 
 ```sh
 python3 ~/work/agentic-workflow/plugins/agentic-workflow/scripts/setup_agents.py \
   --codex-home ~/.codex --claude-settings ~/.claude/settings.json
 ```
 
-This installs five native Codex profiles and merges Claude's 200,000-token
-compaction window into settings. Isolated Codex workers use a 200,000-token
-compaction trigger; native roles inherit the parent's threshold. Setup preserves unrelated settings, backs up changed
-Claude settings and refuses conflicting agent files. Merge customized profiles
-manually when upgrading. For project-only setup, use `--codex-home /project/.codex`
-and `--claude-settings /project/.claude/settings.json`. Either flag works alone.
-Restart both clients after setup; existing sessions keep their loaded configuration.
+Use only the relevant flag if you use one client. Setup preserves unrelated
+settings and refuses conflicting agent files. Claude discovers its agents from
+the plugin. **Restart your clients after installation or an update.**
 
-Claude discovers the five profiles directly from the plugin. Codex uses its
-native agents directory; installing the skills alone does not install profiles.
-Neither client needs separate Caveman/Ponytail plugins in each child: every profile
-embeds the core behavior. Workers consume a small Mem0-derived packet supplied by
-the coordinator instead of loading full plugin libraries or repeating recall.
+The 200k Claude compaction window applies to the main session and subagents;
+it is not a weekly usage cap. See [agent setup and limits](plugins/agentic-workflow/references/subagents.md#compaction).
 
-| Worker | Codex | Claude | Work |
-| --- | --- | --- | --- |
-| `aw-scout` | Luna / low | Haiku / low | Locate files, symbols and callers |
-| `aw-researcher` | Terra / medium | Sonnet / medium | Verify scoped facts |
-| `aw-builder` | Terra / medium | Sonnet / medium | Implement and test a bounded contract |
-| `aw-refuter` | Sol / high | Opus / high | Independently inspect and rerun checks |
-| `aw-debugger` | Sol / high | Opus / high | Diagnose hard root causes |
+## What happens automatically?
 
-The coordinator keeps your chosen model. Two workers maximum by default; exact
-file ownership, fresh contexts, compact briefs/reports, no recursive delegation.
-Tiny work stays local. Builders build; refuters verify without source edits.
-See [delegation policy](plugins/agentic-workflow/references/subagents.md) for exact
-model IDs, budgets, escalation, handoffs and portable worker instructions.
+- **Planning graph:** discovery → domain language → roadmap and milestones → done.
+- **Development graph:** slice plan → implementation → local reviews and repairs →
+  verification → publication when authorized → remote reviews → done.
+- **Focused workers:** smaller models handle bounded tasks; Caveman/Ponytail rules
+  are embedded, so workers need no separate copies of those plugins.
+- **Shared memory:** Mem0 is the only shared-memory provider. Workers receive small
+  context packets; project documents and exact checkpoints remain local artifacts.
 
-**Claude limitation:** `CLAUDE_CODE_AUTO_COMPACT_WINDOW=200000` applies to the main
-session **and all subagents**, with default compaction around 190k tokens. There
-is no supported per-subagent environment setting. It does not make small models
-support larger contexts or guarantee a hard token ceiling. Setup refuses known
-settings-file compaction conflicts; shell/managed overrides still need checking.
-For a session-only trial without changing settings:
+The coding client runs the workflow. The helper records state and validates
+transitions; it does not run a background scheduler or survive a closed client as
+an active monitor. Keep the worktree and use `aw-resume` after an interruption.
 
-```sh
-CLAUDE_CODE_AUTO_COMPACT_WINDOW=200000 claude \
-  --plugin-dir ~/work/agentic-workflow/plugins/agentic-workflow
-```
+## Further details
 
-## Use it
+- [Planning interview and document outputs](plugins/agentic-workflow/references/planning.md)
+- [Commit history and PR review policy](plugins/agentic-workflow/references/delivery.md)
+- [Agent roles, model choices and budgets](plugins/agentic-workflow/references/subagents.md)
+- [Mem0 and worker isolation](plugins/agentic-workflow/references/memory.md)
+- [Graph commands, checkpoints and migrations](plugins/agentic-workflow/references/runtime.md)
+- [Optional project knowledge graph](plugins/agentic-workflow/references/knowledge.md)
 
-Run skills inside the project you want to develop. For a new feature/app, use
-`aw-feature` in Codex or `/agentic-workflow:aw-feature` in Claude with a description:
-
-> Use aw-feature. I want to build an app that helps small teams reserve shared
-> equipment. Act as a Product Engineer and Senior Staff Engineer. Interview me
-> one question at a time, establish our domain vocabulary, and produce the PRD,
-> product roadmap and milestone files. Planning only.
-
-The coordinator carries the same interview through discovery, domain language
-and roadmap/milestone writing. Outputs: PRD, domain document, roadmap index and
-milestone handoff files with vertical bullets, dependencies and acceptance gates.
-Existing document layouts are reused. [Planning protocol](plugins/agentic-workflow/references/planning.md)
-covers checkpoints and the planning graph, which stops before implementation.
-For a PRD-only request, use `aw-discover`; individual stages still work alone.
-
-For a defined slice:
-
-> Use aw-plan for M1.T1 using the current roadmap and domain language. Include
-> important contract snippets and the required verification commands.
-
-For authorized implementation:
-
-> Use aw-resume to coordinate M1.T1 through implementation, independent specialist
-> and real Claude review, valid finding repairs and final checks. Save resumable
-> state. Stop for a material decision or review escalation.
-
-| Skill | Responsibility |
-| --- | --- |
-| `aw-feature` | One guided planning journey: idea → requirements/domain → roadmap and milestone files |
-| `aw-discover` | Guided discovery and one accepted PRD |
-| `aw-domain` | DDD terms, examples, invariants, lifecycles and context boundaries |
-| `aw-roadmap` | Roadmap index and milestone files with vertical slices, dependencies and acceptance |
-| `aw-plan` | One concrete next-slice plan grounded in code |
-| `aw-execute` | Focused implementation/repair and meaningful checks |
-| `aw-review` | Independent review, adjudication, scoped rereview and final verification |
-| `aw-resume` | Coordinate graph steps or resume from exact local run state |
-| `aw-context` | Retrieve scoped Mem0 facts and prepare compact worker context |
-
-Each skill works independently. A request to plan does not start implementation.
-The full graph is useful for multi-stage work and cross-client handoffs.
-
-Before committing/pushing, the workflow keeps each review repair in its original
-tracer-bullet commit: review uncommitted work by default, or amend local provisional
-commits. Published fixes are folded into owned bullet commits under the branch's
-history policy. PR creation starts the remote review phase; it does not finish it.
-See [delivery policy](plugins/agentic-workflow/references/delivery.md) and
-[graph evidence/migration](plugins/agentic-workflow/references/runtime.md#delivery-and-remote-review-evidence).
-
-## The two graphs
-
-The planning-only orchestration graph is `discovery → domain → roadmap → done`.
-Roadmap completion requires the full document bundle, including milestone files.
-The development orchestration graph below applies after implementation is authorized.
-
-```mermaid
-flowchart LR
-  D[Discovery] --> U[Domain language]
-  U --> R[Roadmap]
-  R --> P[Slice plan]
-  P --> E[Execute]
-  E --> V[Independent reviews]
-  V -->|clean| T[Final checks]
-  V -->|valid findings| F[Repair]
-  F --> V
-  T -->|pass| Ready[Locally verified]
-  Ready -->|local-only finish| Done[Done]
-  Ready -->|publish or update PR| PR[Wait for remote reviews]
-  PR -->|pending| PR
-  PR -->|valid findings| F
-  PR -->|reviews complete and checks pass| Done
-  Ready -->|next authorized slice| P
-  T -->|fail| F
-  V -->|attempt limit| X[Diagnose / decision]
-  F -->|repair limit| X
-  X --> P
-  Done -->|next ready slice| P
-```
-
-The **orchestration graph** records current work, role, allowed outcomes and
-evidence. The default review node joins a specialist result and cross-model
-result, which the host may run concurrently on the same frozen snapshot.
-
-The **knowledge graph** links concepts and artifacts, for example:
-`slice → implements → requirement → uses_term → domain term`.
-It supports bounded context retrieval and impact exploration. It does not route
-agents or prove that a test passed. Domain terms feed every subsequent stage;
-DDD is not an instruction to introduce microservices or tactical patterns.
-
-See [research and alternatives](docs/research.md) for LangGraph, Agent Graph,
-GraphRAG and the reason this version uses simple local files.
-
-## Start/resume a graph run
-
-Python 3.10+, Git, macOS/Linux. Initialize Git in a new project first. From any
-directory, point the helper at the project explicitly:
-
-```sh
-python3 ~/work/agentic-workflow/plugins/agentic-workflow/scripts/workflow.py \
-  --project /path/to/project init equipment-m1 --slice M1.T1
-
-python3 ~/work/agentic-workflow/plugins/agentic-workflow/scripts/workflow.py \
-  --project /path/to/project status equipment-m1
-```
-
-Then ask either client to use `aw-resume` for `equipment-m1` in that worktree.
-It reads the returned route, performs the work, and records actual evidence.
-Existing accepted documents can satisfy discovery/domain/roadmap after inspection;
-they do not need to be recreated. State resides in the Git common directory under
-`agentic-workflow/`, shared between clients on this machine. Keep the worktree.
-
-See [runtime/evidence format](plugins/agentic-workflow/references/runtime.md) for
-advance, note, recover, custom graphs, review joins and verification evidence.
-The helper checks allowed transitions, stale revisions, fingerprints, required
-reviewers, unresolved dispositions and planned check coverage. It does not prove
-that agent-supplied evidence is truthful or restore lost working files/processes.
-
-Two repair rounds are the default. Failed reviewer attempts are also bounded.
-Exhaustion routes to diagnosis; it never means “clean enough.” Native agents and
-real cross-model CLI access must be available to satisfy independent review.
-
-## Project knowledge and shared recall
-
-Reuse your existing document paths. New projects default to `docs/product/PRD.md`,
-`docs/domain/DOMAIN.md`, `docs/roadmap/ROADMAP.md` and `docs/plans/<slice>.md`.
-Put project-specific conventions, required checks and role choices in
-`docs/workflow/project.md` only when needed.
-
-Use `aw-context` to create `docs/workflow/knowledge.json` from actual artifacts.
-Its [format and query examples](plugins/agentic-workflow/references/knowledge.md)
-use stable IDs, typed edges and provenance. No automatic extraction or embeddings.
-Queries are bounded neighborhoods, not exhaustive review coverage.
-
-Mem0 is the exclusive shared-memory provider. The coordinator searches once per
-slice/meaningful context change and verifies essential writes at boundaries.
-Workers receive relevant memories in their packet; they do not access Obsidian or
-another memory backend. Canonical docs and exact run state stay in the repository.
-An unavailable Mem0 connection is reported; authorized work can proceed from
-explicit artifacts without pretending that recall or persistence succeeded.
-
-See [Mem0 and minimal workers](plugins/agentic-workflow/references/memory.md) for
-scope, write verification and isolation. Use `scripts/run_worker.py --help` for the
-isolated process path. Native Claude profiles restrict tools but cannot disable
-session plugin hooks; native Codex roles cannot selectively remove inherited MCP.
-Strict workers therefore use a separate CLI process with role instructions and a
-Mem0 packet. Authentication stays with the installed client; no API billing switch.
-
-## Extend and validate
-
-- Add a focused `skills/<name>/SKILL.md`; both clients load the same source.
-- For a project route, copy the default graph, add a node/edges and pass `--graph`.
-- Add reviewer IDs to `required_reviewers` and document how the host supplies them.
-- Add domain-specific graph relations only when an actual question needs them.
-
-Keep host-specific manifests separate. Do not copy the skills for each client or
-add a general agent scheduler until this fixed workflow demonstrably needs one.
-Keep native agent instructions aligned across `agents/` and `codex-agents/`.
-
-```sh
-python3 -m unittest discover -s tests -v
-claude plugin validate plugins/agentic-workflow
-claude plugin validate .claude-plugin/marketplace.json
-```
-
-Tests use disposable Git repositories and no model calls. They cover full graph
-progress, process restarts, stale writers/evidence, incomplete review, repair caps,
-working files and dependency graph boundaries. Codex's bundled plugin/skill
-validators were also run during creation. Live model workflow quality and token
-savings still need a real-slice pilot.
+For plugin development, run `python3 -m unittest discover -s tests -v` and validate
+both plugin manifests. Tests use temporary Git repositories and make no model calls.
