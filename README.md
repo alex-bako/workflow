@@ -88,41 +88,32 @@ clients you will use. The default cross-model review requires **both Claude Code
 and Codex**. Configure **Mem0 in both clients** for shared recall; this plugin does
 not provision Mem0 or supply its credentials.
 
-Clone the repository once:
-
-```sh
-git clone https://github.com/alex-bako/workflow.git ~/work/agentic-workflow
-```
-
-Register the plugin with each client you use:
+Install directly from the released marketplace—no manual clone needed:
 
 **Claude Code**
 
 ```sh
-claude plugin marketplace add ~/work/agentic-workflow
+claude plugin marketplace add https://github.com/alex-bako/workflow.git#stable
 claude plugin install agentic-workflow@agentic-workflow
 ```
+
+Restart Claude, then run `/agentic-workflow:aw-setup` once.
 
 **Codex**
 
 ```sh
-codex plugin marketplace add ~/work/agentic-workflow
-codex plugin add agentic-workflow@personal
+codex plugin marketplace add alex-bako/workflow --ref stable
+codex plugin add agentic-workflow@agentic-workflow
 ```
 
-This repository's Codex marketplace is named `personal`. If that name already
-belongs to another marketplace, resolve the collision before registering it.
+Restart Codex, then ask **“Use aw-setup”** once.
 
-Install the focused Codex agent profiles and Claude compaction setting:
+Setup uses the installed plugin to add the focused Codex profiles or configure
+Claude's compaction window. It preserves unrelated settings and refuses conflicting
+agent files. Run it in each client you use, then restart the clients.
 
-```sh
-python3 ~/work/agentic-workflow/plugins/agentic-workflow/scripts/setup_agents.py \
-  --codex-home ~/.codex --claude-settings ~/.claude/settings.json
-```
-
-Use only the relevant flag if you use one client. Setup preserves unrelated
-settings and refuses conflicting agent files. Claude discovers its agents from
-the plugin. **Restart your clients after installation or an update.**
+Already using the old local marketplace? See [migration and updates](docs/releases.md#installations-and-updates)
+before registering the remote source.
 
 The 200k Claude compaction window applies to the main session and subagents;
 it is not a weekly usage cap. See [agent setup and limits](plugins/agentic-workflow/references/subagents.md#compaction).
@@ -141,8 +132,19 @@ The coding client runs the workflow. The helper records state and validates
 transitions; it does not run a background scheduler or survive a closed client as
 an active monitor. Keep the worktree and use `aw-resume` after an interruption.
 
+## Updates
+
+**Claude Code:** run `claude plugin marketplace update agentic-workflow`, then
+`claude plugin update agentic-workflow@agentic-workflow`.
+
+**Codex:** run `codex plugin marketplace upgrade agentic-workflow`, then
+`codex plugin add agentic-workflow@agentic-workflow`.
+
+Restart and run `aw-setup` again if the release changes agent configuration.
+
 ## Further details
 
+- [Releases, pinned versions and marketplace migration](docs/releases.md)
 - [Planning interview and document outputs](plugins/agentic-workflow/references/planning.md)
 - [Commit history and PR review policy](plugins/agentic-workflow/references/delivery.md)
 - [Agent roles, model choices and budgets](plugins/agentic-workflow/references/subagents.md)

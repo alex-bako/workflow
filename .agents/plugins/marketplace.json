@@ -1,7 +1,7 @@
 {
-  "name": "personal",
+  "name": "agentic-workflow",
   "interface": {
-    "displayName": "Personal"
+    "displayName": "Agentic Workflow"
   },
   "plugins": [
     {

@@ -1,6 +1,6 @@
 {
   "name": "agentic-workflow",
-  "version": "0.5.0+codex.20260912055242",
+  "version": "0.6.0",
   "description": "Guided feature interviews, domain vocabulary, roadmap and milestone documents, focused execution and resumable reviews.",
   "author": {
     "name": "Alex Bako"
@@ -9,7 +9,7 @@
   "interface": {
     "displayName": "Agentic Workflow",
     "shortDescription": "Plan, build and resume with shared domain language.",
-    "longDescription": "Nine shared skills covering feature interviews, PRDs, domain vocabulary, roadmap and milestone files, slice planning, execution, review and resumption. Planning and development graphs keep scope explicit.",
+    "longDescription": "Shared skills covering feature interviews, PRDs, domain vocabulary, roadmap and milestone files, slice planning, execution, review and resumption, with one-time agent setup. Planning and development graphs keep scope explicit.",
     "developerName": "Alex Bako",
     "category": "Productivity",
     "capabilities": [],

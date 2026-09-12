@@ -1,0 +1,51 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+concurrency:
+  group: release
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Validate version and release ancestry
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/check_release.py --tag "$RELEASE_TAG"
+          git merge-base --is-ancestor HEAD origin/main
+          if git show-ref --verify --quiet refs/remotes/origin/stable; then
+            git merge-base --is-ancestor origin/stable HEAD
+            if [ "$(git rev-parse origin/stable)" != "$(git rev-parse HEAD)" ]; then
+              previous=$(git show origin/stable:plugins/agentic-workflow/.codex-plugin/plugin.json | python -c 'import json,sys; print(json.load(sys.stdin)["version"])')
+              python scripts/check_release.py --tag "$RELEASE_TAG" --after "$previous"
+            fi
+          fi
+      - run: python -m unittest discover -s tests -v
+      - name: Publish GitHub release
+        shell: bash
+        run: |
+          set -euo pipefail
+          # A rerun may follow publication but precede stable promotion.
+          if gh release view "$RELEASE_TAG" --json isDraft > release-status.json; then
+            python -c 'import json; assert not json.load(open("release-status.json"))["isDraft"], "Resolve the existing draft release before retrying"'
+          else
+            gh release create "$RELEASE_TAG" --verify-tag --generate-notes --title "$RELEASE_TAG"
+          fi
+      - name: Promote tested release to stable
+        run: git push origin HEAD:refs/heads/stable
