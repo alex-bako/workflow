@@ -95,16 +95,20 @@ CLAUDE_CODE_AUTO_COMPACT_WINDOW=200000 claude \
 
 ## Use it
 
-Run skills inside the project you want to develop. Start with a description:
+Run skills inside the project you want to develop. For a new feature/app, use
+`aw-feature` in Codex or `/agentic-workflow:aw-feature` in Claude with a description:
 
-> Use aw-discover. I want to build an app that helps small teams reserve shared
-> equipment. Act as a Product Engineer and Principal Software Engineer and ask
-> one guided question at a time.
+> Use aw-feature. I want to build an app that helps small teams reserve shared
+> equipment. Act as a Product Engineer and Senior Staff Engineer. Interview me
+> one question at a time, establish our domain vocabulary, and produce the PRD,
+> product roadmap and milestone files. Planning only.
 
-After discovery:
-
-> Use aw-domain to establish our ubiquitous language and business invariants from
-> the PRD, then aw-roadmap to organize milestones into vertical tracer bullets.
+The coordinator carries the same interview through discovery, domain language
+and roadmap/milestone writing. Outputs: PRD, domain document, roadmap index and
+milestone handoff files with vertical bullets, dependencies and acceptance gates.
+Existing document layouts are reused. [Planning protocol](plugins/agentic-workflow/references/planning.md)
+covers checkpoints and the planning graph, which stops before implementation.
+For a PRD-only request, use `aw-discover`; individual stages still work alone.
 
 For a defined slice:
 
@@ -119,9 +123,10 @@ For authorized implementation:
 
 | Skill | Responsibility |
 | --- | --- |
+| `aw-feature` | One guided planning journey: idea → requirements/domain → roadmap and milestone files |
 | `aw-discover` | Guided discovery and one accepted PRD |
 | `aw-domain` | DDD terms, examples, invariants, lifecycles and context boundaries |
-| `aw-roadmap` | Milestones, vertical slices, dependencies and acceptance |
+| `aw-roadmap` | Roadmap index and milestone files with vertical slices, dependencies and acceptance |
 | `aw-plan` | One concrete next-slice plan grounded in code |
 | `aw-execute` | Focused implementation/repair and meaningful checks |
 | `aw-review` | Independent review, adjudication, scoped rereview and final verification |
@@ -139,6 +144,10 @@ See [delivery policy](plugins/agentic-workflow/references/delivery.md) and
 [graph evidence/migration](plugins/agentic-workflow/references/runtime.md#delivery-and-remote-review-evidence).
 
 ## The two graphs
+
+The planning-only orchestration graph is `discovery → domain → roadmap → done`.
+Roadmap completion requires the full document bundle, including milestone files.
+The development orchestration graph below applies after implementation is authorized.
 
 ```mermaid
 flowchart LR

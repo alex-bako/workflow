@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "start": "discovery",
+  "recovery_node": "roadmap",
+  "max_repairs": 0,
+  "required_reviewers": [],
+  "nodes": {
+    "discovery": {"skill": "aw-discover", "role": "product-and-staff-engineer", "gate": "artifacts", "required_artifact_roles": ["prd"], "edges": {"complete": "domain", "blocked": "escalate"}},
+    "domain": {"skill": "aw-domain", "role": "product-and-staff-engineer", "gate": "artifacts", "required_artifact_roles": ["domain"], "edges": {"complete": "roadmap", "revisit": "discovery", "blocked": "escalate"}},
+    "roadmap": {"skill": "aw-roadmap", "role": "product-and-staff-engineer", "gate": "artifacts", "required_artifact_roles": ["prd", "domain", "roadmap", "milestones"], "edges": {"complete": "done", "revisit": "domain", "blocked": "escalate"}},
+    "escalate": {"skill": "aw-feature", "role": "product-and-staff-engineer", "gate": "decision", "edges": {"replan": "discovery"}},
+    "done": {"skill": "aw-feature", "role": "product-and-staff-engineer", "gate": "artifacts", "edges": {}}
+  }
+}

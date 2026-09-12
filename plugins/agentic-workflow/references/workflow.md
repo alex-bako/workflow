@@ -12,8 +12,8 @@ govern intended behavior; code/tests establish observed behavior. Record a
 conflict instead of silently treating either as the other. Memories and graph
 edges are pointers with provenance, not new authority.
 
-Use product-engineering judgment (value, usability, scope) and principal-engineering
-judgment (contracts, failure modes, maintainability) together. Ask one material
+Act as Product Engineer and Senior Staff Engineer together: combine value,
+usability and scope with contracts, failure modes and maintainability. Ask one material
 question at a time, with a recommendation and tradeoff. Inspect available evidence
 before asking. Record stated answers separately from assumptions. Reuse prior
 answers; an existing instruction to proceed is sufficient. Missing optional
@@ -26,6 +26,7 @@ Prefer existing files. Otherwise use:
 - `docs/product/PRD.md`: product problem, scope, acceptance and assumptions.
 - `docs/domain/DOMAIN.md`: ubiquitous language, scenarios, invariants, boundaries.
 - `docs/roadmap/ROADMAP.md`: milestone/slice index and dependencies.
+- `docs/roadmap/milestones/<milestone-id>.md`: milestone gates and vertical bullets.
 - `docs/plans/<slice>.md`: next-slice implementation plan.
 - `docs/workflow/knowledge.json`: optional curated relationship index.
 - `docs/workflow/project.md`: only project-specific paths, checks, roles or policy overrides.
@@ -45,7 +46,12 @@ and checkpoint helper, not a daemon or model scheduler. Individual skills can
 also run standalone without initializing a graph. A standalone stage does not
 authorize implementation or any later stage.
 
-The default lifecycle is discovery → domain → roadmap → plan → execute → review
+For an idea-to-documents planning request, use `aw-feature` and
+[the planning graph](planning.md): discovery → domain vocabulary → roadmap and
+milestone documents → planning done. It has no implementation edge. Keep one
+interview and ask one question at a time; do not stop merely after the PRD.
+
+The default development lifecycle is discovery → domain → roadmap → plan → execute → review
 → verify → ready, with repair, replan and escalation edges.
 PR delivery continues ready → pr_review → done; local-only delivery may finish
 at ready. Read [delivery policy](delivery.md) before any commit/push/PR operation. Reviewers may run

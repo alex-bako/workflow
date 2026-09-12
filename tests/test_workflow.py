@@ -58,6 +58,47 @@ class RunTests(unittest.TestCase):
             {"command": command, "exit_code": 0, "fingerprint": fingerprint, "evidence": "checks.log"}
             for command in ["python3 app.py", "git diff --check"]]}
 
+    def test_planning_requires_document_bundle_stops_before_code_and_recovers(self):
+        graph = ROOT / "plugins/agentic-workflow/graphs/planning.json"
+        self.cli("init", "sample", "--graph", str(graph))
+        self.cli("note", "sample", "--revision", "0", "--evidence", "-", evidence={
+            "next_action": "Ask who may approve a reservation", "pending_question": "Who approves?"})
+        self.assertEqual(self.cli("status", "sample")["last_event"]["evidence"]["pending_question"], "Who approves?")
+        self.assertEqual(self.advance("blocked", {"summary": "Contradictory approval rules", "next_action": "Resolve rule ownership"})["node"], "escalate")
+        self.assertEqual(self.advance("replan", {"summary": "Conflict resolved", "decision": "Use the owner's clarified rule", "next_action": "Reconcile existing answers"})["node"], "discovery")
+        self.advance("complete", {"summary": "PRD draft", "artifacts": ["scope.md"]}, success=False)
+        error = self.advance("complete", {"summary": "Malformed evidence", "artifacts": ["scope.md"], "artifact_roles": []}, success=False)
+        self.assertIn("artifact_roles must be an object", error["error"])
+        self.advance("complete", {"summary": "PRD accepted", "artifacts": ["scope.md"], "artifact_roles": {"prd": ["scope.md"]}})
+        self.advance("complete", {"summary": "Vocabulary and rules accepted", "artifacts": ["scope.md"], "artifact_roles": {"domain": ["scope.md"]}})
+        for name in ("roadmap.md", "M1.md", "M2.md"):
+            (self.project / name).write_text("Accepted planning content\n")
+        evidence = {"summary": "Planning accepted", "artifacts": ["scope.md", "roadmap.md", "M1.md", "M2.md"],
+                    "artifact_roles": {"prd": ["scope.md"], "domain": ["scope.md"], "roadmap": ["roadmap.md"]}}
+        self.advance("complete", evidence, success=False)
+        evidence["artifact_roles"]["milestones"] = ["absent.md"]
+        self.advance("complete", evidence, success=False)
+        evidence["artifact_roles"]["milestones"] = ["M1.md", "M2.md"]
+        result = self.advance("complete", evidence)
+        self.assertEqual(result["node"], "done"); self.assertEqual(result["outcomes"], [])
+        self.advance("next", {"summary": "Start coding", "slice": "M1.T1"}, success=False)
+        self.assertEqual((self.project / "app.py").read_text(), "value = 1\n")
+        (self.project / "M1.md").write_text("User revised a milestone\n")
+        recovered = self.cli("recover", "sample", "--revision", str(result["revision"]), "--evidence", "-",
+                             evidence={"reason": "Scope changed", "next_action": "Reconcile milestone and dependencies"})
+        self.assertEqual(recovered["node"], "roadmap")
+        self.advance("complete", evidence)
+
+    def test_planning_does_not_weaken_development_review_configuration(self):
+        graph = json.loads((ROOT / "plugins/agentic-workflow/graphs/development.json").read_text())
+        graph["required_reviewers"] = []
+        with self.assertRaisesRegex(ValueError, "Review gates need"):
+            workflow.validate_graph(graph)
+        graph = json.loads((ROOT / "plugins/agentic-workflow/graphs/planning.json").read_text())
+        graph["recovery_node"] = "missing"
+        with self.assertRaisesRegex(ValueError, "Invalid recovery"):
+            workflow.validate_graph(graph)
+
     def test_full_run_survives_fresh_processes_and_requires_all_checks(self):
         self.reach_review()
         self.assertEqual(self.advance("clean", self.clean())["node"], "verify")

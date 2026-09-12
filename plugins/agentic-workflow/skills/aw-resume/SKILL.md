@@ -31,6 +31,11 @@ Read [the shared contract](../../references/workflow.md) and
    conflicting requirements. Propose a concrete revised plan. Replanning retains
    the repair count; starting a new slice is the only normal counter reset.
 
+When the saved planning graph is at `done` with no outgoing edges, report the
+PRD, domain vocabulary, roadmap and milestone artifacts and stop. Do not migrate
+it to PR delivery or infer implementation authorization. Resume its unanswered
+interview question through `aw-feature` if planning is still in progress.
+
 At `ready`, follow [delivery policy](../../references/delivery.md): continue the
 next authorized bullet, finish local-only delivery, or publish/reuse the PR and
 enter `pr_review`. Never stop successfully just because a PR was created. Resume

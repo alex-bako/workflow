@@ -201,3 +201,18 @@ ready, and moves old done to ready while preserving history, counters and findin
 It refuses graphs already migrated or with incompatible delivery edges. Inspect
 custom graph semantics before any manual migration. Existing PR operations remain
 subject to the same authorization as before the upgrade.
+
+## Planning-only runs
+
+`aw-feature` uses `--graph /path/to/plugin/graphs/planning.json` with local delivery.
+It reuses the existing interview and document skills; `done` has no implementation
+edge. See [planning protocol and artifact evidence](planning.md). The helper
+requires `artifact_roles` coverage for configured `required_artifact_roles` at
+artifact gates. Paths must also appear in `artifacts` and resolve to project files.
+This enforces output presence, not content quality or acceptance authenticity.
+
+Planning recovery uses its declared `recovery_node` (`roadmap`) instead of the
+development review node. Existing development graphs retain their review recovery.
+A graph without review gates can omit reviewers using an empty list; development
+review gates still require reviewer identities. Saved planning and development
+runs stay separate; starting implementation needs its own authorized scope.

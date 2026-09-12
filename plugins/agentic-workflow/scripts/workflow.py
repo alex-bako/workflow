@@ -74,11 +74,15 @@ def validate_graph(graph):
     limit = graph.get("max_review_attempts", graph["max_repairs"] + 2)
     require(type(limit) is int and limit > 0, "Invalid max_review_attempts")
     reviewers = graph.get("required_reviewers")
-    require(isinstance(reviewers, list) and reviewers and all(isinstance(r, str) and r for r in reviewers) and len(set(reviewers)) == len(reviewers), "Required reviewer IDs must be unique and nonempty")
+    require(isinstance(reviewers, list) and all(isinstance(r, str) and r for r in reviewers) and len(set(reviewers)) == len(reviewers), "Required reviewer IDs must be unique and nonempty")
+    require(reviewers or not any(n.get("gate") == "review" for n in nodes.values()), "Review gates need required reviewers")
+    require("recovery_node" not in graph or graph["recovery_node"] in nodes, "Invalid recovery node")
     for name, node in nodes.items():
         require(node.get("gate") in {"artifacts", "review", "tests", "decision", "next", "delivery", "pull_request"}, f"Unknown gate at {name}")
         require(isinstance(node.get("skill"), str) and isinstance(node.get("role"), str), f"Missing skill/role at {name}")
         require(isinstance(node.get("edges"), dict) and all(target in nodes for target in node["edges"].values()), f"Invalid edges at {name}")
+        roles = node.get("required_artifact_roles", [])
+        require(isinstance(roles, list) and all(isinstance(r, str) and r for r in roles) and len(set(roles)) == len(roles), f"Invalid artifact roles at {name}")
     return graph
 
 
@@ -149,6 +153,11 @@ def advance(state, outcome, evidence, current):
                 require(check.get("head") == current["head"] and check.get("evidence") and check.get("status") == "success", "Remote check is stale, pending or unsuccessful")
     if outcome == "complete" and gate == "artifacts":
         artifact_paths(Path(state["project"]), evidence)
+        roles = evidence.get("artifact_roles", {})
+        require(isinstance(roles, dict), "artifact_roles must be an object")
+        for role in node.get("required_artifact_roles", []):
+            paths = roles.get(role)
+            require(isinstance(paths, list) and paths and all(p in evidence["artifacts"] for p in paths), f"Missing artifact role: {role}")
         if state["node"] == "plan":
             checks = evidence.get("required_checks")
             require(isinstance(checks, list) and checks and all(isinstance(c, str) and c.strip() for c in checks), "Plan must name required check commands")
@@ -341,7 +350,7 @@ def main():
                     if args.command == "recover":
                         require(evidence.get("reason"), "Recovery needs an explanation of changed work")
                         if state["node"] in {"review", "verify", "ready", "pr_review", "done"}:
-                            state["node"] = "review"
+                            state["node"] = state["graph"].get("recovery_node", "review")
                         state.pop("reviewed_fingerprint", None)
                         state["snapshot"] = current
                     state["history"].append({"node": event_node, "target": state["node"], "outcome": args.command, "evidence": evidence, "snapshot": current, "at": now()})

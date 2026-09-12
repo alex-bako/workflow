@@ -1,7 +1,7 @@
 {
   "name": "agentic-workflow",
-  "version": "0.4.0+codex.20260911154743",
-  "description": "Guided discovery, domain language, vertical slices, bounded reviews and resumable graph workflows.",
+  "version": "0.5.0+codex.20260912055242",
+  "description": "Guided feature interviews, domain vocabulary, roadmap and milestone documents, focused execution and resumable reviews.",
   "author": {
     "name": "Alex Bako"
   },
@@ -9,10 +9,10 @@
   "interface": {
     "displayName": "Agentic Workflow",
     "shortDescription": "Plan, build and resume with shared domain language.",
-    "longDescription": "Eight shared skills for discovery, domain modeling, roadmap, slice planning, execution, review, resumption and project context. Includes local graph routing and checkpoints.",
+    "longDescription": "Nine shared skills covering feature interviews, PRDs, domain vocabulary, roadmap and milestone files, slice planning, execution, review and resumption. Planning and development graphs keep scope explicit.",
     "developerName": "Alex Bako",
     "category": "Productivity",
     "capabilities": [],
-    "defaultPrompt": "Use aw-resume to continue my development workflow, or aw-discover to shape a new idea."
+    "defaultPrompt": "Use aw-feature to turn my idea into product and milestone plans, or aw-resume to continue development."
   }
 }

@@ -7,6 +7,8 @@ description: Turn accepted product scope and domain language into dependency-ord
 
 Read [the shared contract](../../references/workflow.md), accepted PRD/domain
 sections, and existing architecture. Reuse an existing roadmap rather than reset it.
+Follow the [planning output contract](../../references/planning.md#output-contract)
+for the roadmap index and milestone handoff documents.
 
 1. Define milestones by user-observable outcomes. Each tracer bullet exercises a
    complete path through the layers it needs, including verification. Avoid
@@ -21,9 +23,16 @@ sections, and existing architecture. Reuse an existing roadmap rather than reset
 4. Distinguish shipped/current behavior from intended behavior. Keep historical
    plans labeled as historical; maintain one current execution index. Update graph
    `depends_on` edges and requirement links if `aw-context` is in use.
-5. Challenge slicing and dependencies with a bounded independent perspective when
+5. Write/update the product roadmap AND each milestone document (or the project's
+   existing combined milestone sections). Link them by stable IDs. Each milestone
+   must contain its outcome, entry dependencies, exit gate, scope/non-goals and
+   vertical bullet specifications with requirement/domain references, acceptance
+   and verification approach. Preserve completed work and current source authority.
+6. Challenge slicing and dependencies with a bounded independent perspective when
    requested/available. Do not rewrite all accepted scope during every review.
 
 Exit: each milestone has coherent value, slices have testable acceptance, blocked
-dependencies are visible, and the next slice is implementable. Produce the roadmap
-and a recommended next slice. Defer code-level detail to `aw-plan`.
+dependencies are visible, and all in-scope requirements are covered or explicitly
+deferred. Produce actual roadmap and milestone file links plus a recommended next
+slice. Defer code-level detail to `aw-plan`. In the planning graph, record the full
+artifact bundle and stop at planning done; in a development run, follow its route.
