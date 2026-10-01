@@ -69,10 +69,8 @@ def snapshot(project):
 def validate_graph(graph):
     nodes = graph.get("nodes", {})
     require(graph.get("version") == 1 and graph.get("start") in nodes, "Invalid graph version/start")
-    require("escalate" in nodes and "done" in nodes, "Graph needs escalate and done nodes")
-    require(type(graph.get("max_repairs")) is int and graph["max_repairs"] >= 0, "Invalid max_repairs")
-    limit = graph.get("max_review_attempts", graph["max_repairs"] + 2)
-    require(type(limit) is int and limit > 0, "Invalid max_review_attempts")
+    require("done" in nodes, "Graph needs a done node")
+    # Legacy graphs may retain budget fields; recovery is now coordinator-owned.
     reviewers = graph.get("required_reviewers")
     require(isinstance(reviewers, list) and all(isinstance(r, str) and r for r in reviewers) and len(set(reviewers)) == len(reviewers), "Required reviewer IDs must be unique and nonempty")
     require(reviewers or not any(n.get("gate") == "review" for n in nodes.values()), "Review gates need required reviewers")
@@ -186,13 +184,7 @@ def advance(state, outcome, evidence, current):
             require(type(check.get("exit_code")) is int and check["exit_code"] == 0, "Required check did not pass")
             require(check.get("fingerprint") == current["fingerprint"], "Test evidence is stale")
     if gate == "decision":
-        require(evidence.get("decision") and evidence.get("next_action"), "Escalation needs a diagnosis/decision and next action")
-        additional = evidence.get("additional_repairs", 0)
-        require(type(additional) is int and additional >= 0, "additional_repairs must be nonnegative")
-        if additional:
-            require(evidence.get("authorization"), "Extending a review budget needs the user's authorization reference")
-            graph["max_repairs"] += additional
-            graph["max_review_attempts"] = graph.get("max_review_attempts", state["review_attempts"]) + additional + 1
+        require(evidence.get("decision") and evidence.get("next_action"), "Decision needs a diagnosis/decision and next action")
     if gate == "next" or (gate == "delivery" and outcome == "next"):
         require(not state.get("pull_request") or state["node"] == "done", "Finish pending PR reviews before starting another slice")
         require(isinstance(evidence.get("slice"), str) and evidence["slice"].strip() and evidence["slice"] != state["slice"], "Next requires a different slice ID")
@@ -205,9 +197,6 @@ def advance(state, outcome, evidence, current):
     if target == "repair":
         state["repair_rounds"] += 1
         state.pop("reviewed_fingerprint", None)
-    limit = graph.get("max_review_attempts", graph["max_repairs"] + 2)
-    if (target == "repair" and state["repair_rounds"] > graph["max_repairs"]) or (gate in {"review", "pull_request"} and outcome in {"fix", "incomplete", "replan"} and state["review_attempts"] >= limit):
-        target = "escalate"
     state["history"].append({"node": state["node"], "outcome": outcome, "target": target,
                              "evidence": evidence, "snapshot": current, "at": now()})
     state["node"] = target

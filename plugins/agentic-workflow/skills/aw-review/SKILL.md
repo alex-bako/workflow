@@ -6,15 +6,15 @@ description: Coordinate independent code reviews, adjudicate findings, perform s
 # Review and verify
 
 Read [the shared contract](../../references/workflow.md) and
-[review protocol](../../references/review.md). In `verify`, run final required
-checks; in `review`, coordinate independent `aw-refuter` agents using the
+[review protocol](../../references/review.md). Run relevant checks and coordinate
+independent review in the order the task needs, using the
 [delegation policy](../../references/subagents.md). Refuters inspect source without
 editing it and independently rerun relevant checks; allow assigned test outputs.
 
 Review the acceptance criteria, domain invariants, changed behavior and affected
-callers on one frozen snapshot. The default perspectives are a specialized host
-reviewer and a real cross-model reviewer. Scope specialists to the risk; do not
-automatically launch a panel. Join every required result, including failures.
+callers on one stable snapshot. Default to one independent reviewer separate from
+the builder. Add specialist or cross-provider review when risk or project policy
+warrants it; preserve agreed coverage. Join required results, including failures.
 
 Adjudicate findings before edits. Retain IDs, impact, evidence and reasons for
 actionable/advisory/rejected dispositions. Ask for new evidence before reopening
@@ -23,15 +23,17 @@ because it is outside the original diff.
 
 After a repair, rereview the changed region, affected integration paths and prior
 actionable findings. Do not restart an unrelated full audit. Broaden when contracts
-or risk changed. Count incomplete reviewer retries; missing output is not clean.
-Use the run's repair/attempt limits and stop for diagnosis when exhausted.
+or risk changed. Missing output is not clean. The coordinator diagnoses repeated
+failures and disputes, changes approach or reassigns work; no attempt count
+requires user escalation. Do not weaken acceptance to end the loop.
 
 For final verification, check required reviews still cover the current snapshot,
 all acceptance criteria are satisfied, and required checks passed. Record actual
-command results. Disclose unverified environments. Route to ready only when
-all required evidence is complete; otherwise repair or escalate.
+command results in the progress note. Disclose unverified environments. Complete
+only when the evidence supports acceptance; otherwise continue investigation or
+repair. For UI changes perform browser/design QA from the review protocol.
 
-At `pr_review`, follow [delivery policy](../../references/delivery.md): wait for
+When PR delivery is authorized, follow [delivery policy](../../references/delivery.md): wait for
 expected remote reviews, inspect all incoming findings and checks on the latest
 head, repair valid findings in their original bullet, and update/recheck the same
 PR. PR creation, green CI alone and an empty inbox are not completion.

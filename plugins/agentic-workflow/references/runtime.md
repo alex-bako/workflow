@@ -1,4 +1,9 @@
-# Local runtime
+# Optional legacy runtime
+
+Normal skill use needs none of these commands or JSON records. Use plans and a
+Progress section as described in [workflow.md](workflow.md). This helper remains
+for existing structured runs and explicit opt-in use. It validates recorded
+evidence; it does not control the host agent or schedule work.
 
 Requirements: Python 3.10+, Git, macOS or Linux. No pip packages, model APIs,
 background hooks or network calls. Find the plugin root from the loaded SKILL.md;
@@ -47,10 +52,9 @@ Review outcome `clean` requires:
 
 ```json
 {
-  "summary":"Both required reviewers completed and findings were adjudicated.",
+  "summary":"Required independent review completed and findings were adjudicated.",
   "reviews":[
-    {"reviewer":"specialist","status":"complete","fingerprint":"SNAPSHOT_VALUE","evidence":"/path/to/specialist-result.json","findings":[]},
-    {"reviewer":"cross-model","status":"complete","fingerprint":"SNAPSHOT_VALUE","evidence":"/path/to/claude-result.json","findings":[]}
+    {"reviewer":"independent","status":"complete","fingerprint":"SNAPSHOT_VALUE","evidence":"/path/to/review-result.json","findings":[]}
   ]
 }
 ```
@@ -76,7 +80,7 @@ completion, and every planned required check:
 ```
 
 The helper validates structure, matching fingerprints, reviewer coverage, planned
-check coverage, allowed outcomes and budgets. It does not run commands, attest
+check coverage and allowed outcomes. It does not run commands, attest
 that evidence text is truthful, or independently decide product acceptance. The
 host must actually run checks and inspect reviewer outputs. Logs should live in
 the run directory so writing them does not change the reviewed worktree.
@@ -111,20 +115,25 @@ transfer them. Keep the worktree and explicitly preserve/transfer uncommitted an
 untracked files when moving machines. This is resumption of work, not a backup or
 a promise to restore another client's hidden context or running processes.
 
-## Budgets and extending the graph
+## Recovery and extending the optional graph
 
-Default: two repair rounds; four non-clean review attempts at most before
-escalation. `escalate → replan` needs `summary`, `decision`, and `next_action`.
-Replanning does not reset counters. Only after an explicit user-authorized budget
-extension may that evidence include positive `additional_repairs` plus an
-`authorization` reference. A new slice (`ready/done → next`, with `slice`) resets counts. Pending PRs must
-complete before moving to another slice.
+Repair and review counters are telemetry only. There is no attempt cap or automatic
+escalation, including for old saved graphs containing `max_repairs` or
+`max_review_attempts`; those fields are ignored. No budget extension is required.
+A run previously at `escalate` can record its diagnosis with `replan` and continue.
+Counters, findings and review requirements remain intact. Alternatively carry the
+state into the normal progress-note workflow without deleting the original record.
+The coordinator changes strategy when attempts stop producing new evidence.
+
+New development runs start at `plan`; reuse the existing accepted slice document.
+They default to one `independent` reviewer. Saved/custom reviewer requirements are
+preserved. Planning-only runs still stop before implementation.
 
 For project-specific nodes or reviewers, copy `graphs/development.json` into the
 project, edit explicit edges/skill/role/gate, then initialize with `--graph PATH`.
 Available gates are artifacts, review, tests, decision, next, delivery and
 pull_request. Preserve the
-standard plan/review/repair/verify/escalate/done semantics; custom nodes normally
+standard plan/review/repair/verify/done semantics; custom nodes normally
 use the artifact gate. Keep required reviewers explicit and add a behavioral test
 for any new route. Graph extensions cannot grant tool or external-action authority.
 
@@ -157,7 +166,7 @@ reviewers/checks to be added. Reducing the recorded coverage is rejected.
 At `pr_review`, use `pending` with `head`, fetched-output `evidence` and
 `next_action`; a pending state never means completion. Unchanged polls need no
 new event. `incomplete` records failed review retrieval/execution, consumes a
-review attempt and can escalate. `fix` also needs the normal actionable `findings`
+review attempt for telemetry; recovery remains coordinator-owned. `fix` also needs the normal actionable `findings`
 list; include the owning bullet and original remote IDs in each finding/reason.
 Repair follows the existing local graph, then publish the new head and wait again.
 
@@ -204,7 +213,8 @@ subject to the same authorization as before the upgrade.
 
 ## Planning-only runs
 
-`aw-feature` uses `--graph /path/to/plugin/graphs/planning.json` with local delivery.
+For explicit structured planning, use `--graph /path/to/plugin/graphs/planning.json`
+with local delivery. Normal `aw-feature` use needs no graph.
 It reuses the existing interview and document skills; `done` has no implementation
 edge. See [planning protocol and artifact evidence](planning.md). The helper
 requires `artifact_roles` coverage for configured `required_artifact_roles` at

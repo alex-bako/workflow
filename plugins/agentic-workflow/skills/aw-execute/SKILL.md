@@ -5,8 +5,9 @@ description: Implement an accepted tracer bullet or repair adjudicated findings 
 
 # Execute or repair
 
-Read [the shared contract](../../references/workflow.md) and selected plan. For a
-graph run, inspect current state and distinguish `execute` from `repair`.
+Read [the shared contract](../../references/workflow.md), selected plan and progress
+note. Distinguish new implementation from repair using actual work and findings;
+no graph or worker-launch script is required.
 
 1. Inspect the actual worktree and callers before editing. Preserve existing user
    work. Implement the accepted behavior with existing patterns and domain terms.
@@ -33,9 +34,9 @@ graph run, inspect current state and distinguish `execute` from `repair`.
    outstanding findings and worker handles. Keep the worktree. A checkpoint is
    not a backup, and a past test result does not cover a new code snapshot.
 
-Report what changed and what evidence supports it. Continue through graph nodes
-when the user's broader implementation request authorizes that; otherwise stop
-at the requested boundary. A repair cap means diagnose/replan, not declare done.
+Report what changed and what evidence supports it. Continue through the authorized
+work; otherwise stop at the requested boundary. Return failed approaches and new
+evidence to the coordinator, which owns recovery without a repair-attempt cap.
 
 Before committing or pushing, follow [delivery policy](../../references/delivery.md).
 Keep review repairs in their original tracer-bullet commit. Default to uncommitted

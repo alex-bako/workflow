@@ -34,5 +34,6 @@ for the roadmap index and milestone handoff documents.
 Exit: each milestone has coherent value, slices have testable acceptance, blocked
 dependencies are visible, and all in-scope requirements are covered or explicitly
 deferred. Produce actual roadmap and milestone file links plus a recommended next
-slice. Defer code-level detail to `aw-plan`. In the planning graph, record the full
-artifact bundle and stop at planning done; in a development run, follow its route.
+slice. Defer code-level detail to `aw-plan`. Record document links and the next
+action in the existing progress note. Planning-only scope stops before implementation;
+continue delivery only when already authorized. No graph commands are required.

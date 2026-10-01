@@ -1,47 +1,42 @@
 ---
 name: aw-resume
-description: Resume or coordinate an existing development graph across Codex and Claude using durable run state and verified working files.
+description: Coordinate or resume approved work from plans and actual code, owning implementation, independent verification and recovery without scripted phase gates.
 ---
 
-# Resume and coordinate
+# Coordinate delivery
 
-Read [the shared contract](../../references/workflow.md) and
-[runtime instructions](../../references/runtime.md).
+Read [the shared contract](../../references/workflow.md). Work directly in the host;
+no Python scripts, graph run, JSON evidence or special setup is required.
 
-1. Locate the project and task ID. List saved runs if ambiguous; do not silently
-   pick the newest unrelated task. Read status, retained notes, graph node and
-   history. Verify repository/worktree, branch, code snapshot and dependencies.
-2. If work differs, inspect the diff and reconcile what actually happened. Keep
-   unrelated edits. Invalidate stale tests/reviews, document the new next action,
-   and use the recovery command before advancing. Never reset or checkout files
-   merely to make the checkpoint match. Missing worktree means restore actual
-   work from an authorized backup/patch or report what is missing.
-3. Resolve pending processes/agents/PR operations from actual status. Do not replay
-   a mutation just because its completion message was lost. Record known external
-   identifiers before retrying. A checkpoint restores workflow state, not process
-   execution or another client's hidden conversation.
-4. Retrieve only relevant Mem0 project memories and existing graph neighbors.
-   Follow artifact authority and domain language; do not reload the entire history.
-5. Execute the returned skill/role, record its outcome/evidence with the current
-   revision, and inspect the next route. Continue while authorized and executable.
-   Stop for a material user decision, missing capability, or escalation. Do not
-   busy-loop on an unchanged node or record fabricated evidence to advance.
-6. At escalation use a bounded `aw-debugger` only for hard root-cause uncertainty;
-   keep routine diagnosis local. Diagnose repeated findings, inadequate tests, scope churn, or
-   conflicting requirements. Propose a concrete revised plan. Replanning retains
-   the repair count; starting a new slice is the only normal counter reset.
+1. Locate the requested plan and its Progress section or existing handoff. Inspect
+   repository/worktree, code changes and dependencies. Reuse accepted product/domain
+   decisions. Start a brief progress note if absent; do not restart feature discovery.
+   A planning-only request stays planning-only until implementation is authorized.
+2. Reconcile recorded work with actual files, checks, agents and PR status. Preserve
+   unrelated changes. Invalidate stale evidence; never reset code to match a note.
+   Resolve pending operation IDs before retrying so resumption does not duplicate
+   commits, PRs or other mutations. A note does not restore running processes.
+3. Choose the next useful action: implement, investigate, delegate a focused task,
+   review, exercise the application or repair a demonstrated defect. Use `aw-execute`
+   and `aw-review` as needed, not as a compulsory sequence. Keep routine decisions
+   and orchestration local; use native agents when separation or expertise helps.
+4. Own recovery. For repeated failure inspect new evidence and change strategy,
+   narrow the problem, reproduce it, or reassign work. Adjudicate reviewer disputes
+   against accepted behavior. There is no repair-attempt ceiling or permission
+   request to continue fixing. Do not rerun an unchanged failed approach. Temporary
+   provider limits need a resumable note and a supported wait, not a product question.
+5. Continue within existing authority. Ask the user only for a material product
+   choice, additional authority, or access you cannot obtain. Do not weaken acceptance
+   or review requirements to claim completion. Update progress at meaningful
+   handoffs: what changed, evidence, unresolved findings and the next action.
+6. Finish when the actual final version satisfies acceptance, required checks and
+   independent review. For UI work include browser/design QA as described in
+   [review guidance](../../references/review.md). Disclose unavailable verification.
+   Follow [delivery policy](../../references/delivery.md) for authorized publication
+   and incoming reviews; creating a PR alone is not verified delivery.
 
-When the saved planning graph is at `done` with no outgoing edges, report the
-PRD, domain vocabulary, roadmap and milestone artifacts and stop. Do not migrate
-it to PR delivery or infer implementation authorization. Resume its unanswered
-interview question through `aw-feature` if planning is still in progress.
-
-At `ready`, follow [delivery policy](../../references/delivery.md): continue the
-next authorized bullet, finish local-only delivery, or publish/reuse the PR and
-enter `pr_review`. Never stop successfully just because a PR was created. Resume
-pending reviewer/run IDs against the actual current head; repair, amend the owning
-bullet and recheck the same PR until remote coverage is complete. For old saved
-graphs, apply the documented compatibility protocol without resetting budgets.
-At done, report verified completion and PR review/check evidence. A milestone may
-continue with the next dependency-ready slice. Neither completion nor resumption
-authorizes merging/deployment.
+For legacy graph runs, read the state file directly and preserve findings, authority,
+pending IDs and evidence in the progress note; mark which handoff is current. Keep
+the old records intact. Use [the optional helper](../../references/runtime.md) only
+if structured graph tracking is still desired. Old retry caps do not require user
+approval to continue. Neither resumption nor completion authorizes merge/deploy.

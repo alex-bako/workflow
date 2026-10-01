@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Small Tools</title>
+<style>
+* { box-sizing: border-box; }
+body { margin: 0; color: #18202c; background: white; font-family: Arial, sans-serif; }
+main { max-width: 720px; margin: 48px auto; padding: 0 24px; }
+label, input { display: block; margin: 12px 0; }
+input { max-width: 100%; }
+input, button { font: inherit; padding: 12px; }
+.primary, button { display: inline-block; padding: 12px; color: white; background: #1458cc; border: 0; border-radius: 6px; }
+</style>
+<main>
+  <h1>Small Tools</h1>
+  <p>Useful tools for everyday work.</p>
+  <a class="primary" href="#signup">Get started</a>
+  <section id="signup">
+    <h2>Join the waitlist</h2>
+    <form>
+      <label for="email">Email</label>
+      <input id="email" type="email" required>
+      <button>Join waitlist</button>
+      <p id="status" role="status"></p>
+    </form>
+  </section>
+</main>
+<script>
+document.querySelector('form').addEventListener('submit', event => {
+  event.preventDefault();
+  document.querySelector('#status').textContent = "You're on the list.";
+});
+</script>
+</html>

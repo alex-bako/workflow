@@ -70,51 +70,15 @@ deferred, each referenced milestone/bullet exists, dependencies are acyclic, and
 milestone exit gates cover the product success criteria. Link every output in the
 handoff; a roadmap listing names alone is incomplete.
 
-## Planning graph and resumption
+## Resumption
 
-With a Git repository, initialize one planning run using the existing helper:
+Keep a short Progress section in an existing planning document: accepted decisions,
+remaining assumptions, pending question, document links and next action. Read that
+and the actual documents to resume; do not repeat answered questions. No Git repo,
+Python helper, graph or structured evidence file is required.
 
-```sh
-python3 /path/to/plugin/scripts/workflow.py --project /path/to/project init feature-planning --graph /path/to/plugin/graphs/planning.json
-```
-
-Use the actual feature/task ID. `status`/`note`/`advance` work as documented in
-runtime.md. On each user answer, keep the pending question/decisions in a `note`;
-advance a stage only after its output and material decisions are ready. A genuine
-conflict with no agreed path can route `blocked` to `escalate`; record the conflict
-and next action. Once resolved, `replan` requires the decision and next action,
-then reconciles discovery using existing answers. An ordinary unanswered interview
-question stays at its current stage with a pending note; it is not escalation. Notes may
-reference evolving documents; they do not hide changed work or confer acceptance.
-
-For `complete`, use normal artifact evidence plus `artifact_roles`, mapping each
-role to its artifact paths. Discovery requires `prd`; domain requires `domain`.
-Roadmap requires the complete bundle, including existing unchanged sources:
-
-```json
-{
-  "summary": "User decisions reconciled; milestone coverage and dependencies checked.",
-  "artifacts": ["docs/product/PRD.md", "docs/domain/DOMAIN.md", "docs/roadmap/ROADMAP.md", "docs/roadmap/milestones/M1.md"],
-  "artifact_roles": {
-    "prd": ["docs/product/PRD.md"],
-    "domain": ["docs/domain/DOMAIN.md"],
-    "roadmap": ["docs/roadmap/ROADMAP.md"],
-    "milestones": ["docs/roadmap/milestones/M1.md"]
-  },
-  "next_action": "Planning complete; await a request to plan/implement the first slice."
-}
-```
-
-List all actual milestone documents; multiple roles can point to the same existing
-file when the project combines them. The helper checks presence/path containment
-and named role coverage; the coordinator verifies contents, traceability and actual
-acceptance. File existence does not prove the interview happened or decisions were
-accepted. Never substitute empty placeholder documents to pass the gate.
-
-Planning `done` has no outgoing implementation edge. `aw-resume` must honor that
-terminal state instead of launching the next slice. For changed work after planning `done`,
-`recover` returns to roadmap; mid-stage recovery keeps the current stage. Revisit
-domain/discovery if the change requires it.
-The development graph and active development runs remain unchanged. To implement
-later, reconcile these accepted artifacts with current code in a new/matching
-development run, then perform the selected slice's detailed `aw-plan` stage.
+Planning completion requires the agreed document bundle and settled material
+questions. Report actual paths and acceptance status, then stop before implementation.
+A later implementation request reuses the bundle and the selected slice's plan.
+For users retaining legacy structured state, the optional [runtime](runtime.md)
+supports planning runs; its JSON artifact checks are not part of normal skill use.

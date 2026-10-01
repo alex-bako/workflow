@@ -49,7 +49,9 @@ The coordinator reconciles the plan with current progress, reuses the matching
 run, and works through the selected scope. Review fixes stay with their original
 tracer-bullet commits. PR creation starts the remote review phase; completion
 requires the expected reviews and latest-head checks to finish without unresolved
-actionable findings. A blocker or exhausted repair budget remains unfinished.
+actionable findings. The coordinator owns recovery: diagnose, change approach or
+reassign work without a fixed retry cap. It asks you only for decisions, authority
+or access that it cannot obtain itself.
 
 For local-only work, replace the publication instructions with **“Local changes
 and reviews only; do not commit, push or create a PR.”**
@@ -60,9 +62,9 @@ and reviews only; do not commit, push or create a PR.”**
 /agentic-workflow:aw-resume Continue U2.2 from its saved workflow state.
 ```
 
-Use the same worktree and include the saved task ID if several runs exist. This
-continues the saved interview, implementation or review state within its existing
-authorization. Planning runs stay planning-only until you request implementation.
+Use the same worktree and point to the plan or progress note. The coordinator
+reconciles that note with actual code, checks and pending operations before
+continuing within existing authorization. Planning runs stay planning-only until you request implementation.
 
 ## Which skill should I use?
 
@@ -78,15 +80,21 @@ stages are also available when you only need one part:
 | `aw-plan` | A detailed plan for one tracer bullet |
 | `aw-execute` | A bounded implementation or repair stage |
 | `aw-review` | Independent reviews, finding adjudication and verification |
-| `aw-resume` | Coordinate or resume the complete authorized workflow |
+| `aw-resume` | Coordinate or resume approved work, including recovery and verification |
+| `aw-eval` | Evaluate a skill change against realistic scenarios; optional plugin development tool |
 | `aw-context` | Retrieve relevant Mem0 context and prepare worker briefs |
 
 ## First-time setup
 
-You need Git, Python 3.10+ and macOS or Linux. Install and authenticate the coding
-clients you will use. The default cross-model review requires **both Claude Code
-and Codex**. Configure **Mem0 in both clients** for shared recall; this plugin does
-not provision Mem0 or supply its credentials.
+Install and authenticate the coding client(s) you will use. **The skills do not
+require Python, a graph runtime, JSON state or an agent-launch script.** They work
+from your project documents and a short Progress section in the selected plan.
+Use your normal project tools for builds and tests.
+
+Native host agents are the default. One reviewer independent of the builder is the
+starting point; add specialist/cross-provider review for risk or project policy.
+Configure Mem0 for shared recall; unavailable memory does not block work supported
+by project documents. The plugin does not provision credentials.
 
 Install directly from the released marketplace—no manual clone needed:
 
@@ -97,7 +105,7 @@ claude plugin marketplace add https://github.com/alex-bako/workflow.git#stable
 claude plugin install agentic-workflow@agentic-workflow
 ```
 
-Restart Claude, then run `/agentic-workflow:aw-setup` once.
+Restart Claude to load the skills. `aw-setup` is optional.
 
 **Codex**
 
@@ -106,11 +114,12 @@ codex plugin marketplace add alex-bako/workflow --ref stable
 codex plugin add agentic-workflow@agentic-workflow
 ```
 
-Restart Codex, then ask **“Use aw-setup”** once.
+Restart Codex to load the skills. **“Use aw-setup”** is optional.
 
-Setup uses the installed plugin to add the focused Codex profiles or configure
-Claude's compaction window. It preserves unrelated settings and refuses conflicting
-agent files. Run it in each client you use, then restart the clients.
+Optional setup installs the bundled Codex profiles or configures Claude's
+compaction window. This convenience helper needs Python 3.10+ on macOS/Linux;
+it preserves unrelated settings and refuses conflicting files. You can instead
+use native agents with coordinator-supplied role briefs, without running setup.
 
 Already using the old local marketplace? See [migration and updates](docs/releases.md#installations-and-updates)
 before registering the remote source.
@@ -120,17 +129,32 @@ it is not a weekly usage cap. See [agent setup and limits](plugins/agentic-workf
 
 ## What happens automatically?
 
-- **Planning graph:** discovery → domain language → roadmap and milestones → done.
-- **Development graph:** slice plan → implementation → local reviews and repairs →
-  verification → publication when authorized → remote reviews → done.
+- **Human-led planning:** collaborative discovery, domain language, roadmap and
+  milestone documents. Planning stops before implementation.
+- **Coordinator-led delivery:** choose the next useful implementation, investigation,
+  review or QA action. Preserve scope and acceptance; adapt the execution strategy.
+- **Browser/design QA:** independently exercise UI changes against the accepted
+  design, with screenshots and concrete findings. Do not accept a candidate's
+  screenshot as its own proof of correctness.
 - **Focused workers:** smaller models handle bounded tasks; Caveman/Ponytail rules
   are embedded, so workers need no separate copies of those plugins.
 - **Shared memory:** Mem0 is the only shared-memory provider. Workers receive small
   context packets; project documents and exact checkpoints remain local artifacts.
 
-The coding client runs the workflow. The helper records state and validates
-transitions; it does not run a background scheduler or survive a closed client as
-an active monitor. Keep the worktree and use `aw-resume` after an interruption.
+The coding client runs the work; the plugin is not a background scheduler. Keep
+the worktree and use `aw-resume` after an interruption. Existing Python scripts
+and graphs remain optional compatibility utilities. Older saved findings and
+review requirements are preserved; their retry counters no longer force escalation.
+
+## Evaluate the skills
+
+Use `aw-eval` when changing a skill, not for every delivery task. It runs selected
+[behavioral scenarios](plugins/agentic-workflow/references/evals.md) in isolated
+workspaces and scores observed actions and artifacts against held-out criteria.
+Start with recovery, planning boundaries and website QA; compare old/new skill
+versions using the same provider, model and case. No eval framework or Python
+runner is required. These model-behavior evals are separate from the helper's unit
+tests; passing one does not prove the other.
 
 ## Updates
 
@@ -140,7 +164,7 @@ an active monitor. Keep the worktree and use `aw-resume` after an interruption.
 **Codex:** run `codex plugin marketplace upgrade agentic-workflow`, then
 `codex plugin add agentic-workflow@agentic-workflow`.
 
-Restart and run `aw-setup` again if the release changes agent configuration.
+Restart after updating. Rerun optional `aw-setup` only if you use its installed profiles and their configuration changed.
 
 ## Further details
 
@@ -149,7 +173,7 @@ Restart and run `aw-setup` again if the release changes agent configuration.
 - [Commit history and PR review policy](plugins/agentic-workflow/references/delivery.md)
 - [Agent roles, model choices and budgets](plugins/agentic-workflow/references/subagents.md)
 - [Mem0 and worker isolation](plugins/agentic-workflow/references/memory.md)
-- [Graph commands, checkpoints and migrations](plugins/agentic-workflow/references/runtime.md)
+- [Optional legacy graph commands and migrations](plugins/agentic-workflow/references/runtime.md)
 - [Optional project knowledge graph](plugins/agentic-workflow/references/knowledge.md)
 
 For plugin development, run `python3 -m unittest discover -s tests -v` and validate

@@ -44,7 +44,10 @@ def check(root=ROOT, tag=None, after=None):
         if entry.get("name") != NAME or entry.get("source") != source or "version" in entry:
             raise ValueError(f"Marketplace must reference the bundled plugin without duplicating version: {path}")
     for file in ("skills/aw-setup/SKILL.md", "skills/aw-feature/SKILL.md",
-                 "scripts/setup_agents.py", "graphs/development.json", "graphs/planning.json"):
+                 "scripts/setup_agents.py", "graphs/development.json", "graphs/planning.json",
+                 "skills/aw-eval/SKILL.md", "references/evals.md",
+                 "evals/website/design.md", "evals/website/candidate.html",
+                 "evals/website/control.html"):
         if not (root / PLUGIN / file).is_file():
             raise ValueError(f"Missing packaged file: {file}")
     return version

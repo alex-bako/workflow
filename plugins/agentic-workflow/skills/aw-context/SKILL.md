@@ -17,7 +17,8 @@ artifact; do not create a new graph or index just to support memory recall.
 
 Use a graph only when relationships help answer a concrete question. Reuse an
 existing graph if available; otherwise keep a curated JSON index in the project.
-This graph describes project knowledge. The separate execution graph routes work.
+This optional graph describes project knowledge; it is not required for execution.
+Read small indexes directly; the query script is optional.
 
 1. Start with IDs already present in the domain document, PRD, ADRs and roadmap.
    Add nodes for terms, rules, requirements, decisions, slices and important code

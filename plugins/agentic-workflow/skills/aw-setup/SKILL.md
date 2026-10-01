@@ -3,7 +3,11 @@ name: aw-setup
 description: Set up this installed plugin's focused Codex agents or Claude compaction setting without cloning the source repository.
 ---
 
-# Set up the current client
+# Optional native profile setup
+
+The planning, delivery and review skills work without setup or Python. Run this
+only when the user wants the bundled native profiles or compaction setting. Native
+agents can instead receive the role instructions directly from the coordinator.
 
 Use the existing [setup helper](../../scripts/setup_agents.py) from this installed
 skill's actual plugin directory. Resolve that relative path; never assume a cache
