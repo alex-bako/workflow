@@ -1,8 +1,7 @@
 {
   "version": 1,
-  "start": "discovery",
-  "max_repairs": 2,
-  "required_reviewers": ["specialist", "cross-model"],
+  "start": "plan",
+  "required_reviewers": ["independent"],
   "nodes": {
     "discovery": {"skill": "aw-discover", "role": "product-engineer", "gate": "artifacts", "edges": {"complete": "domain"}},
     "domain": {"skill": "aw-domain", "role": "domain-modeler", "gate": "artifacts", "edges": {"complete": "roadmap", "revisit": "discovery"}},
@@ -12,7 +11,6 @@
     "review": {"skill": "aw-review", "role": "review-coordinator", "gate": "review", "edges": {"clean": "verify", "fix": "repair", "incomplete": "review", "replan": "plan"}},
     "repair": {"skill": "aw-execute", "role": "focused-repairer", "gate": "artifacts", "edges": {"complete": "review", "replan": "plan"}},
     "verify": {"skill": "aw-review", "role": "verification-coordinator", "gate": "tests", "edges": {"pass": "ready", "fail": "repair"}},
-    "escalate": {"skill": "aw-resume", "role": "diagnostician", "gate": "decision", "edges": {"replan": "plan"}},
     "done": {"skill": "aw-resume", "role": "coordinator", "gate": "next", "edges": {"next": "plan"}},
     "ready": {"skill": "aw-resume", "role": "delivery-coordinator", "gate": "delivery", "edges": {"next": "plan", "finish": "done", "published": "pr_review"}},
     "pr_review": {"skill": "aw-review", "role": "remote-review-coordinator", "gate": "pull_request", "edges": {"pending": "pr_review", "incomplete": "pr_review", "fix": "repair", "clean": "done"}}

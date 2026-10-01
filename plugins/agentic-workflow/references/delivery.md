@@ -25,10 +25,11 @@ unrelated edits. Do not amend whichever commit happens to be HEAD, squash an
 entire milestone, or rewrite someone else's commits. Source changes still need
 the required scoped local rereviews and checks before push.
 
-Committing/amending changes the helper's HEAD/index fingerprint even when source
-content is identical. Record old/new SHA and compare actual contents, modes,
-renames and submodules. Use `recover`, then explicitly re-establish current review
-and test evidence. Carry coverage forward only with an inspected, recorded reason
+Committing/amending changes the recorded revision even when source content is
+identical. Record old/new SHA and compare actual contents, modes, renames and
+submodules. Update the progress note and re-establish current review and test
+evidence. Only users retaining the optional graph need its `recover` command.
+Carry coverage forward only with an inspected, recorded reason
 that its inputs are unchanged; rerun affected checks/reviews when they changed.
 Never relabel a stale fingerprint without this assessment. Commit before final
 verification when using provisional commits to avoid unnecessary recovery.
@@ -41,23 +42,25 @@ force push. Shared/protected branches or someone else's commits require an
 agreed compatible history strategy. Never rewrite the default branch. This
 workflow authorizes no unrelated branch mutation, merge or deployment.
 
-## Publication is a graph transition, not completion
+## Publication and review
 
-Select `--delivery pull-request` at run initialization when PR delivery is in
-scope; local-only work uses `--delivery local`. Local verification routes to
-`ready`, not `done`. At `ready`, either continue the next authorized bullet,
-finish local-only delivery, or publish/reuse the PR and record `published`.
-Publishing enters `pr_review`. A local-only run that publishes also switches to
-PR delivery and must complete the remote phase. Never recreate an existing PR.
+Record the authorized delivery boundary in the plan/progress note. Local-only work
+ends after local acceptance. For PR delivery, publish/reuse the PR, save its URL and
+head, and continue through required remote reviews. Never recreate an existing PR.
+The optional graph helper uses `ready` and `pr_review` for these states; its commands
+are not required to publish or track feedback.
 
 Before publishing, determine expected remote reviewers/bots and required check
 names from project policy, PR requests and actual configured workflows. Include
 an expected review even if its job has not appeared yet. Persist that coverage
 with the PR URL and published head SHA. Expand coverage when policy or review
 requests add reviewers/checks; retain earlier requirements. Do not remove a missing/failed
-reviewer or check to make the gate pass. An empty reviewer list is not clean.
+reviewer or check to make acceptance pass. Do not invent remote reviewer requirements
+if project policy requires only the
+already completed independent local review. An actually requested remote review
+must still complete; an empty inbox alone is not evidence of that.
 
-At `pr_review`:
+While awaiting remote review:
 
 1. Fetch the current PR head, requested/submitted reviews, inline review threads,
    issue comments and check/workflow runs. Read all relevant pages and retain raw
@@ -73,11 +76,11 @@ At `pr_review`:
    or resolved GitHub thread is not proof the underlying issue was fixed. Fix
    valid findings; retain reasons for advisory/rejected ones. Do not post replies
    or resolve remote threads unless that communication is authorized.
-4. `fix` routes through repair -> local review -> verify -> ready. Amend/fold into
-   the original bullet, update the same PR, record its new head with `published`,
+4. Repair actionable findings, recheck affected behavior and independent coverage.
+   Amend/fold into the original bullet, update the same PR, record its new head,
    and wait again for required remote coverage/checks on that head. Preserve the
-   finding ledger and repair budget. Broaden local coverage for cross-bullet fixes.
-5. `clean` is allowed only after all expected reviews completed, every incoming
+   finding ledger and evidence. Broaden local coverage for cross-bullet fixes.
+5. Completion is allowed only after all expected reviews completed, every incoming
    finding was adjudicated with no actionable item left, and required checks
    passed for the latest published head. Fetch head and inbox once more immediately
    before recording completion. New work/head changes invalidate old coverage;
@@ -85,27 +88,28 @@ At `pr_review`:
 
 Poll lightweight status in bounded waits (normally 30–60 seconds); fetch large
 outputs only when status changes. Keep the task active while reviews run. Record
-`pending` when status changes, with pending IDs and next action; unchanged polls
-need no graph event. Waits do not consume repair attempts. Failed review retries
-use `incomplete` and the existing attempt cap; valid repair rounds keep their cap.
+pending work when status changes, with pending IDs and next action; unchanged polls
+need no new note. Failed review retrieval is incomplete, not acceptance. Diagnose
+repeat failures or wait with backoff; no retry count requires user escalation.
 If a host/session limit or unavailable human prevents further waiting, preserve
-`pr_review` and a resumable pending status. Use a supported durable wake-up when
+the PR identifiers and a resumable pending status. Use a supported durable wake-up when
 available and authorized; never claim a background monitor exists when it does
-not. A waiting/escalated task is unfinished, not a successful completion.
+not. A waiting task is unfinished, not a successful completion.
 
 `gh pr checks --watch` watches checks only. Use the host's GitHub connector or
 GitHub CLI/API for reviews, comments, paginated threads and the current head too.
 Prefer concise status reads; the graph helper itself never polls GitHub, pushes,
 rewrites commits or fabricates review evidence.
 
-## Existing runs
+## Optional structured runs
 
-Runs embed their graph. The new default applies to newly initialized runs; do
-not silently reset an active run to obtain new edges or a fresh repair budget.
+Legacy runs embed their graph. Normally read the saved evidence into the current
+progress note, retaining the original records. If structured tracking is desired,
+do not reset an active run to obtain new edges.
 For a compatible saved graph without `ready`/`pr_review`, inspect its actual PR
 status and use `upgrade-delivery` with the current revision and delivery scope
-(see runtime.md). It preserves history, findings and budgets, routing old `done`
+(see runtime.md). It preserves history, findings and counters, routing old `done`
 to `ready`. Recover unexpected working changes first, then record an existing PR
 with `published`; do not create a duplicate. Custom incompatible graphs need a
 reviewed migration preserving their semantics. Never treat an old local `done`
-as completed PR delivery or start a new run just to reset repair counters.
+as completed PR delivery. Old attempt limits are ignored by the updated helper.

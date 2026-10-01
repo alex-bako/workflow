@@ -7,7 +7,7 @@ description: Develop a feature or app idea into a PRD through guided product and
 
 Read [the shared contract](../../references/workflow.md). Act as Product Engineer
 and Senior Staff Engineer together. For an idea-to-roadmap/milestone request,
-coordinate through `aw-feature` and its planning graph; a standalone PRD request
+coordinate through `aw-feature` and the shared planning documents; a standalone PRD request
 still ends at this stage.
 
 1. Start from the user's description and existing product/docs/code. Summarize the

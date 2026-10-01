@@ -1,4 +1,7 @@
-# Curated knowledge graph
+# Optional curated knowledge graph
+
+Read a small existing index directly. The query helper below is a convenience,
+not a skill prerequisite; do not create an index solely to use this plugin.
 
 This is a project-owned index, not an automatically inferred source of truth.
 Use existing requirement, ADR, term and slice IDs. Nodes and edges carry provenance.

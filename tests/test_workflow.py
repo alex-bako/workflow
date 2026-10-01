@@ -42,7 +42,7 @@ class RunTests(unittest.TestCase):
 
     def reach_review(self, delivery="local"):
         self.cli("init", "sample", "--slice", "M1.T1", "--delivery", delivery)
-        for _ in range(5):
+        for _ in range(2):
             self.advance("complete", {"summary": "Stage evidence inspected", "artifacts": ["scope.md"], "required_checks": ["python3 app.py", "git diff --check"]})
         return self.cli("status", "sample")
 
@@ -50,7 +50,7 @@ class RunTests(unittest.TestCase):
         fingerprint = self.cli("snapshot")["fingerprint"]
         return {"summary": "Independent reviews complete", "reviews": [
             {"reviewer": who, "status": "complete", "fingerprint": fingerprint, "evidence": "review-output.json", "findings": []}
-            for who in ["specialist", "cross-model"]]}
+            for who in ["independent"]]}
 
     def checks(self):
         fingerprint = self.cli("snapshot")["fingerprint"]
@@ -237,15 +237,15 @@ class RunTests(unittest.TestCase):
             evidence={"delivery": "pull-request", "next_action": "Migrate"}, success=False)
         self.assertEqual(path.read_bytes(), before)
 
-    def test_repair_limit_escalates_and_replan_does_not_reset_it(self):
+    def test_repeated_repairs_keep_findings_without_automatic_escalation(self):
         self.reach_review()
         findings = {"summary": "Valid finding", "findings": [{"id": "R1", "disposition": "actionable", "reason": "Invariant broken"}]}
-        for _ in range(2):
+        for _ in range(7):
             self.assertEqual(self.advance("fix", findings)["node"], "repair")
             self.advance("complete", {"summary": "Repair evidence", "artifacts": ["app.py"]})
-        self.assertEqual(self.advance("fix", findings)["node"], "escalate")
-        result = self.advance("replan", {"summary": "Root cause identified", "decision": "Clarify invariant before repair", "next_action": "Revise plan"})
-        self.assertEqual(result["repair_rounds"], 3)
+        result = self.advance("replan", {"summary": "Root cause identified; revise approach"})
+        self.assertEqual(result["repair_rounds"], 7)
+        self.assertEqual(result["findings"]["R1"]["disposition"], "actionable")
 
     def test_previous_actionable_finding_cannot_disappear(self):
         self.reach_review()
@@ -256,11 +256,40 @@ class RunTests(unittest.TestCase):
         evidence["reviews"][0]["findings"] = [{"id": "R1", "disposition": "resolved", "reason": "Regression case and repair inspected"}]
         self.assertEqual(self.advance("clean", evidence)["node"], "verify")
 
-    def test_repeated_incomplete_reviews_escalate(self):
+    def test_repeated_incomplete_reviews_remain_recoverable(self):
         self.reach_review()
-        for _ in range(4):
+        for _ in range(7):
             state = self.advance("incomplete", {"summary": "Reviewer unavailable"})
-        self.assertEqual(state["node"], "escalate")
+        self.assertEqual(state["node"], "review")
+        self.assertEqual(state["review_attempts"], 7)
+        self.assertEqual(self.advance("clean", self.clean())["node"], "verify")
+
+    def test_legacy_budget_fields_do_not_block_recovery_or_reduce_review_requirements(self):
+        self.reach_review()
+        status = self.cli("status", "sample")
+        path = Path(status["state_path"])
+        state = json.loads(path.read_text())
+        state["graph"].update(max_repairs=2, max_review_attempts=4, required_reviewers=["specialist", "cross-model"])
+        state["graph"]["nodes"]["escalate"] = {"skill": "aw-resume", "role": "diagnostician", "gate": "decision", "edges": {"replan": "plan"}}
+        state.update(node="escalate", repair_rounds=8, review_attempts=12)
+        path.write_text(json.dumps(state))
+        self.advance("replan", {"summary": "Diagnosed failure", "decision": "Change implementation approach", "next_action": "Reuse accepted scope"})
+        for _ in range(2):
+            self.advance("complete", {"summary": "Accepted plan and implementation", "artifacts": ["scope.md"], "required_checks": ["python3 app.py", "git diff --check"]})
+        self.assertEqual(self.advance("incomplete", {"summary": "Retry real reviewer"})["node"], "review")
+        self.advance("clean", self.clean(), success=False)
+        evidence = self.clean()
+        evidence["reviews"] = [{**evidence["reviews"][0], "reviewer": who} for who in ["specialist", "cross-model"]]
+        self.assertEqual(self.advance("clean", evidence)["node"], "verify")
+        self.assertEqual(self.cli("status", "sample")["repair_rounds"], 8)
+
+    def test_remote_review_failures_do_not_exhaust_attempts(self):
+        self.reach_review("pull-request")
+        self.advance("clean", self.clean()); self.advance("pass", self.checks()); self.publish()
+        for _ in range(7):
+            state = self.advance("incomplete", {"summary": "Review fetch failed", "head": self.cli("snapshot")["head"], "evidence": "fetch-error.txt"})
+        self.assertEqual(state["node"], "pr_review")
+        self.assertEqual(self.advance("clean", self.remote_clean())["node"], "done")
 
     def test_snapshot_tracks_untracked_staged_mode_and_symlink_changes(self):
         original = workflow.snapshot(self.project)["fingerprint"]

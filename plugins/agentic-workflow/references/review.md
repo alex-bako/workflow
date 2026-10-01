@@ -17,14 +17,17 @@ test/evidence outputs. Parallel checks need isolated output paths or sequential
 execution if they share caches/databases. Distinguish observed facts from assumptions
 and return explicit completion status. “I would run…” is not a passed check.
 
-Use the native host subagent for `specialist` when available. Select expertise
+Default to one native independent reviewer separate from the builder. Add a
+specialist or cross-provider reviewer when risk or project policy requires it.
+For a specialist, select expertise
 based on actual risk (for example authorization/SQL, Rust ownership or UI behavior).
 For `cross-model` from Codex, invoke real Claude Code with `claude -p`; from Claude,
 use an available real Codex review path. If unavailable, record incomplete and
 explain the missing capability. Never replace independent review with a fictional
 persona while preserving its claimed identity.
 
-For minimal cross-model reviews, write the bounded brief and its `Memory status:`
+The following launcher is optional for isolated cross-model reviews. Normally
+dispatch through the host directly with the required tools. For the launcher, write the bounded brief and its `Memory status:`
 field first. Use the isolated worker launcher (Opus for the Claude refuter):
 
 ```sh
@@ -67,10 +70,11 @@ or important integration may require broader review. Required coverage must hold
 on the final snapshot, even when evidence is carried forward with a reasoned
 scope assessment. Do not simply replace an old fingerprint with a new one.
 
-One initial pass and two repair rounds are the default. Repeated incomplete output
-also consumes attempts. At the cap diagnose scope churn, reviewer disagreement,
-missing tests or a design defect. Escalation is not completion. Keep optional
-refactorings separate so review does not continually create more review surface.
+The coordinator owns convergence without a fixed attempt cap. Diagnose repeated
+findings, reviewer disagreement, missing tests or a design defect; change strategy
+and record new evidence instead of repeating an unchanged review. Reassign a stuck
+worker or use targeted diagnosis. Ask the user only when their judgment, authority
+or access is necessary. Keep optional refactorings outside the repair scope.
 
 ## Final verification
 
@@ -81,5 +85,24 @@ when code, environment and command scope still match. Do not duplicate a broad
 local and CI model review automatically when both would examine the same inputs.
 
 For commit ownership and post-publication feedback, follow [delivery policy](delivery.md).
-Local verification routes to ready; PR delivery remains active through remote
-review completion. Preserve the same finding IDs and budgets across both phases.
+PR delivery remains active through required remote review completion. Preserve
+finding IDs and resolution evidence across local and remote feedback.
+
+## Browser and design QA
+
+For UI work, a verifier separate from the builder opens the preview of the reviewed
+version using available browser tools (native, CLI or MCP). The optional isolated
+worker launcher does not supply browser MCP tools; choose a capable native worker
+or shell-driven browser tooling rather than silently skipping QA.
+
+Use the approved design/reference and acceptance criteria: routes, viewports,
+important interaction states and test data. Exercise controls and error paths;
+check layout, typography, content, overflow, keyboard access and relevant console/
+network failures. Save screenshots and expected/actual findings tied to criteria
+and the tested version. Recheck affected behavior after fixes.
+
+A screenshot baseline detects changes; it does not prove a new design is correct.
+Compare with the approved artifact before accepting a new baseline. Do not weaken
+assertions or refresh baselines merely to make failures disappear. If design intent
+is materially missing, identify the precise decision needed; unavailable browser
+verification remains unverified, never an invented pass.

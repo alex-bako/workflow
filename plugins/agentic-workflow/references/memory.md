@@ -50,16 +50,16 @@ code tools. Their profile embeds those behavior rules; loading full skill librar
 again adds redundant context. Do not expose Skill or general MCP discovery merely
 to obtain rules already present. The coordinator alone writes Mem0 and checkpoints.
 
-Use `scripts/run_worker.py` for isolated CLI workers. It disables unrelated plugin/
+Native host workers are the default; send the role brief and needed tools directly.
+Use `scripts/run_worker.py` only when isolated CLI workers are specifically useful. It disables unrelated plugin/
 MCP surfaces and supplies profile instructions plus the coordinator packet. It
 does not pretend to query Mem0 itself or validate the truth of the packet. Keep
 raw worker output as evidence; incomplete/error/timeout results are not success.
 
 Native Claude agents have explicit tool allowlists; enabled plugin hooks remain
 session-level. Codex native roles can disable plugins/skill instructions, but
-cannot selectively remove inherited MCP servers. Native workers are acceptable
-only in an already minimal host session or when the user accepts that limit.
-Otherwise use the isolated process path. Do not advertise a prompt instruction
+cannot selectively remove inherited MCP servers. Native workers inherit host integrations; select tools appropriate to the task.
+Use the isolated process path when that isolation is actually needed. Do not advertise a prompt instruction
 as technical plugin isolation. Managed policies and project instructions remain
 authoritative; report enforced integrations the host cannot suppress.
 
@@ -67,11 +67,11 @@ authoritative; report enforced integrations the host cannot suppress.
 
 200k compaction is a recovery ceiling, not a normal worker size or weekly budget.
 Keep routine work well below it through bounded scope and compact handoffs. Use
-one coordinator per slice, one builder, then independent scoped review. Preserve
-existing required reviewers; changing reviewer count is a product policy decision.
+one coordinator per slice, a builder and independent scoped review. Preserve
+existing required reviewers; new work defaults to one independent reviewer.
 Run deterministic checks before model review, batch valid fixes, and rereview
-affected behavior. Reuse still-valid coverage with a recorded rationale. Stop at
-the existing repair cap for diagnosis rather than continuing an expensive loop.
+affected behavior. Reuse still-valid coverage with a recorded rationale. Diagnose
+repeated failures and change approach; no repair count requires user escalation.
 
 Prefer one frontier planning pass, not duplicate PRD/roadmap generation by both
 providers. Routine well-specified execution may use a mid-tier coordinator;

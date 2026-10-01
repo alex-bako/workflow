@@ -7,7 +7,8 @@ description: Guide a new feature or app from an idea through one-question-at-a-t
 
 Read [the shared contract](../../references/workflow.md) and
 [feature planning](../../references/planning.md). Coordinate the existing
-`aw-discover`, `aw-domain` and `aw-roadmap` skills through `graphs/planning.json`.
+`aw-discover`, `aw-domain` and `aw-roadmap` skills directly from the project documents.
+No graph or Python helper is required.
 One coordinator acts as both Product Engineer and Senior Staff Engineer; do not
 spawn two interviewers or ask the user to invoke each stage manually.
 
@@ -16,7 +17,7 @@ spawn two interviewers or ask the user to invoke each stage manually.
    unknown. If a material unknown remains, ask exactly one guided question,
    recommend an answer with its tradeoff, then wait. Otherwise proceed using the
    supplied answers. Do not bundle questions or fill missing answers with guesses.
-2. Record each answer and its implications in the draft documents and checkpoint.
+2. Record each answer and its implications in the draft documents and a short Progress section.
    Keep the current stage, pending question, accepted decisions, assumptions,
    blockers and next action. Reuse answers across product and engineering work;
    reconcile contradictions with one focused question. Continue the same interview
@@ -33,9 +34,9 @@ spawn two interviewers or ask the user to invoke each stage manually.
 5. At planning done, report actual PRD/domain/roadmap/milestone paths, acceptance
    status and the first dependency-ready slice. Stop before code, feature commits,
    pushes or PRs. Later explicit implementation authorization starts/resumes a
-   separate development run linked to these artifacts; no fabricated stage evidence.
+   delivery from these accepted artifacts; do not repeat planning just to populate state.
 
 For a paused interview, use its saved pending question rather than restart discovery.
 For no Git repository, write the planning docs in the user's chosen project folder
-and retain the interview checkpoint there; do not initialize Git just to satisfy
-this skill. Move checkpoint references into the runtime when Git is available.
+and retain the interview progress there; do not initialize Git or a runtime just
+to satisfy this skill.

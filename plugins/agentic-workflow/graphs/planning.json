@@ -2,7 +2,6 @@
   "version": 1,
   "start": "discovery",
   "recovery_node": "roadmap",
-  "max_repairs": 0,
   "required_reviewers": [],
   "nodes": {
     "discovery": {"skill": "aw-discover", "role": "product-and-staff-engineer", "gate": "artifacts", "required_artifact_roles": ["prd"], "edges": {"complete": "domain", "blocked": "escalate"}},

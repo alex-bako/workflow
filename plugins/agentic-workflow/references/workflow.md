@@ -1,99 +1,92 @@
 # Shared operating contract
 
-Read this once per session when using an `aw-*` skill. Resolve all links relative
-to the loaded skill file; the plugin root is two directories above its folder.
-Never write project artifacts into the installed plugin/cache.
+Read once per session when using an `aw-*` skill. Resolve links relative to the
+loaded skill; the plugin root is two directories above its folder. Never write
+project artifacts into the installed plugin/cache.
 
 ## Authority and scope
 
 Use the user's current instructions and existing authorization. Inspect project
-instructions and reuse its document paths. Accepted requirements and decisions
-govern intended behavior; code/tests establish observed behavior. Record a
-conflict instead of silently treating either as the other. Memories and graph
-edges are pointers with provenance, not new authority.
+instructions and reuse its document paths. Accepted requirements govern intended
+behavior; code/tests establish observed behavior. Record conflicts. Memories and
+old checkpoints provide context, not new authority. Never invent approval.
 
-Act as Product Engineer and Senior Staff Engineer together: combine value,
-usability and scope with contracts, failure modes and maintainability. Ask one material
-question at a time, with a recommendation and tradeoff. Inspect available evidence
-before asking. Record stated answers separately from assumptions. Reuse prior
-answers; an existing instruction to proceed is sufficient. Missing optional
-preferences do not block unrelated work. Drafts remain drafts until the user's
-instructions/answers establish acceptance; do not invent approval.
+Act as Product Engineer and Senior Staff Engineer together. Ask one material
+question at a time, with a recommendation and tradeoff. Inspect evidence before
+asking. Reuse prior answers and distinguish decisions from assumptions. Optional
+preferences do not block unrelated work. Planning alone does not authorize code,
+publication, merge, deployment or external messages.
 
 ## Artifacts and context
 
 Prefer existing files. Otherwise use:
 - `docs/product/PRD.md`: product problem, scope, acceptance and assumptions.
-- `docs/domain/DOMAIN.md`: ubiquitous language, scenarios, invariants, boundaries.
+- `docs/domain/DOMAIN.md`: terms, scenarios, invariants and boundaries.
 - `docs/roadmap/ROADMAP.md`: milestone/slice index and dependencies.
-- `docs/roadmap/milestones/<milestone-id>.md`: milestone gates and vertical bullets.
-- `docs/plans/<slice>.md`: next-slice implementation plan.
-- `docs/workflow/knowledge.json`: optional curated relationship index.
-- `docs/workflow/project.md`: only project-specific paths, checks, roles or policy overrides.
+- `docs/roadmap/milestones/<milestone-id>.md`: milestones and vertical bullets.
+- `docs/plans/<slice>.md`: implementation plan and a short Progress section.
 
-Read the index and selected slice, then relevant sections and symbols. Do not load
-all plans or a full PRD into every worker. Use graph context to locate sources,
-then inspect those sources. Maintain mandatory coverage even when graph context
-is incomplete. Use accepted domain terms in questions, artifacts, code and tests.
-Flag substantive terminology drift; avoid cosmetic rename campaigns.
+Read the selected slice and relevant sources, not every document. Use accepted
+domain terms; flag substantive drift without cosmetic rename campaigns. Existing
+relationship indexes may locate sources but are optional and not authoritative.
 
-## Execution graph
+## Coordinator-led delivery
 
-For a multi-stage or resumable request, use `scripts/workflow.py` as described in
-[runtime.md](runtime.md). The graph returns a skill and role; the host executes
-that step, gathers evidence, and records an allowed outcome. It is a local routing
-and checkpoint helper, not a daemon or model scheduler. Individual skills can
-also run standalone without initializing a graph. A standalone stage does not
-authorize implementation or any later stage.
+These skills run directly in the host agent. No Python helper, graph initialization,
+JSON evidence, worker launcher or setup command is required. Use the accepted plan,
+actual code and its Progress section as the working state. If no suitable document
+exists, keep one task note in the project's usual location. Record scope/authority,
+worktree and revision, completed work, actual check results, outstanding findings,
+active agent/PR IDs and the next action. Update at meaningful handoffs or
+interruptions, not after every tool call.
 
-For an idea-to-documents planning request, use `aw-feature` and
-[the planning graph](planning.md): discovery → domain vocabulary → roadmap and
-milestone documents → planning done. It has no implementation edge. Keep one
-interview and ask one question at a time; do not stop merely after the PRD.
+For planning use `aw-feature` and [planning guidance](planning.md), with one human
+conversation. Planning ends with documents. For delivery start from the approved
+slice instead of repeating discovery. Choose implementation, investigation, review
+and QA in the order the work needs. Skills are tools, not mandatory sequential
+gates. Run checks early; reuse evidence while code, environment and scope still match.
 
-The default development lifecycle is discovery → domain → roadmap → plan → execute → review
-→ verify → ready, with repair, replan and escalation edges.
-PR delivery continues ready → pr_review → done; local-only delivery may finish
-at ready. Read [delivery policy](delivery.md) before any commit/push/PR operation. Reviewers may run
-concurrently on one frozen snapshot; join all required results before advancing.
-Independent slices use separate task IDs and worktrees. Advance to the next slice
-only when dependencies are complete. A node is a unit of work, not a requirement
-to launch another agent. The same coordinator can perform lightweight nodes.
+Recovery belongs to the coordinator. There is no fixed repair/review-attempt cap
+and no user escalation because a counter expired. Diagnose repeated failures,
+reproduce disputed findings, change the approach, split work or reassign it. Record
+what was learned and why the next attempt differs. Do not repeat an unchanged
+failing action. For temporary limits checkpoint and resume when available. Ask the
+user only when progress needs their product judgment, authority or unavailable
+access. Preserve acceptance criteria while adapting the technical approach.
 
-The coordinator is the only checkpoint writer. Before delegation read
-[focused delegation](subagents.md): use its explicit scout/researcher/builder/
-refuter/debugger models, bounded brief, Caveman/Ponytail worker contract and
-two-worker default. Workers return results/artifact paths and never advance the
-graph. Keep product/architecture judgment with the coordinator; use fresh focused
-contexts for workers. If independent review is required but unavailable, mark it
-incomplete rather than impersonating another model.
+Before delegation read [focused delegation](subagents.md). Native workers are the
+normal path; handle small work directly. Keep one owner per edited file and one
+coordinator for progress notes. Reviewers inspect a stable snapshot independently
+from its builder. One independent reviewer is the default; add perspectives for
+actual risk or project policy. Preserve already agreed requirements. Do not
+impersonate an unavailable reviewer or claim unperformed checks.
+
+Scripts and graphs remain optional compatibility utilities. Read [runtime.md](runtime.md)
+only for existing runs or when structured tracking is explicitly desired. Old state
+files can instead be read directly and carried into the progress note: preserve
+findings, scope, evidence and pending operations, mark the note as the current
+handoff, and leave original records intact. Do not maintain competing state stores.
 
 ## Memory and resumption
 
-Save a checkpoint at stage boundaries, review adjudication, and handoff. Include
-the next action, outstanding findings and references; retain the worktree and any
-uncommitted files. The helper detects changed work but does not back it up or
-restore processes. On another machine transfer the actual Git state, working
-files, and run records through an authorized mechanism before resuming.
+Preserve actual worktrees and files. Inspect changes against the recorded revision;
+a note does not back up work or restore running processes. Resolve pending operation
+IDs before retrying mutations. Transfer actual work only through authorized means.
 
-Follow [Mem0-only memory](memory.md). The coordinator retrieves relevant Mem0
-facts once and supplies a bounded packet to each worker. Mem0 is the sole recall
-and durable-lesson provider; do not read/write Obsidian or another memory backend.
-Verify writes and cross-client namespace alignment. If unavailable, report the
-error and use explicit project artifacts for authorized work; never silently
-substitute another provider or claim persistence. Keep exact execution state in
-the existing checkpoints.
+Follow [Mem0-only memory](memory.md). Retrieve relevant facts once and supply compact
+worker context. Mem0 is the sole shared recall/lesson provider; project plans and
+progress notes hold exact task state. If unavailable, report the error and continue
+from sufficient project evidence. Do not substitute another memory provider or
+claim persistence without verification.
 
 ## Completion
 
-Complete a slice only when acceptance criteria, required tests and required
-independent review cover the final code snapshot, with no unresolved actionable
-findings. An unavailable tool, budget cap, timeout or parse error is incomplete.
-The repair limit triggers diagnosis, never success. Keep advisories/rejections
-with reasons so they are not rediscovered without new evidence.
+Finish only when acceptance, required checks and independent review cover the
+final code, with no unresolved actionable findings. A timeout, missing tool or
+incomplete reviewer output is not success. Keep finding IDs and adjudication reasons;
+reopen rejected findings only with new evidence. Changed code invalidates affected
+coverage. For UI changes use [browser/design QA](review.md#browser-and-design-qa).
 
-Ready-for-PR is distinct from task completion. Keep local review repairs in their
-original bullet commits; do not push provisional work. When PR delivery is in
-scope, create/reuse the PR and wait for incoming reviews, fix valid findings and
-verify the latest head before done. Follow [delivery policy](delivery.md). Do not assume
-authorization to merge, publish, deploy, or message others from a plan/review task.
+Read [delivery policy](delivery.md) before Git publication. When PR delivery is
+authorized, create/reuse the PR, address incoming actionable findings and verify
+required reviews/checks on the latest head. Do not infer merge/deploy authority.

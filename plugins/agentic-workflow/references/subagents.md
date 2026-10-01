@@ -22,10 +22,11 @@ one and record the substitution. After a bounded failure, narrow the contract
 before escalating one tier; use the coordinator's frontier model only when the
 remaining uncertainty merits it. Never weaken a required review to save tokens.
 
-Use [Mem0-only memory and isolation](memory.md) before dispatch. Strict minimal
-workers run through `scripts/run_worker.py`; the coordinator provides verified
-Mem0 context and the child loads only its role instructions and code tools.
-Native dispatch is an option for an already minimal session, with the limits below.
+Use [Mem0-only memory](memory.md) before dispatch. Native host agents are the
+default; supply the compact role brief directly, with the tools the task needs.
+No Python launcher or profile installation is required. `scripts/run_worker.py`
+is optional when explicit plugin/MCP isolation is desired and code tools suffice.
+It must not be the default for browser QA or other tasks needing omitted tools.
 
 Claude loads the native `agents/*.md` profiles. Codex profiles are distributed in
 `codex-agents/`; `scripts/setup_agents.py` installs them into its native agents
@@ -75,7 +76,9 @@ independent refuter. Reviewers may produce only assigned evidence/test outputs.
 Reuse a worker for related fixes while its scope/context remains useful. No
 recursive delegation or large agent/team workflow unless explicitly requested
 with a cap. Stop an off-scope or repeating worker; retain its useful evidence and
-rebrief once, then diagnose/escalate. A turn limit or incomplete output is partial,
+diagnose and rebrief or reassign with a changed approach. Worker limits bound an
+invocation; they are not delivery repair caps or a reason to ask the user to retry.
+A turn limit or incomplete output is partial,
 never success. Claude enforces maxTurns; Codex budgets are coordinator-enforced
 (no invented per-role maxTurns config). Close idle agents before starting more.
 
