@@ -1,0 +1,229 @@
+#!/usr/bin/env python3
+"""Fake `gh` for tracker.py tests and evals. Contract: README.md in this folder."""
+import json
+import os
+import re
+import sys
+
+COLUMNS = ["Backlog", "Ready", "In progress", "In review", "Blocked", "Done"]
+TYPES = ["Task", "Bug", "Feature"]
+PROJECT = "PVT_1"
+
+
+def conn(nodes):
+    return {"nodes": nodes}
+
+
+def num(node_id, prefix):
+    return int(node_id[len(prefix):])
+
+
+class Fake:
+    def __init__(self, state):
+        self.state = state
+        self.items = {i["number"]: i for i in state["items"]}
+
+    def get(self, n):
+        if n not in self.items:
+            fail(f"gh: Could not resolve to an Issue with the number of {n}.")
+        return self.items[n]
+
+    def project_items(self, it):
+        if it.get("status") is None:
+            return conn([])
+        return conn([{"id": f"PVTI_{it['number']}", "project": {"id": PROJECT}, "fieldValueByName": self.value(it)}])
+
+    def value(self, it):
+        return {"name": it["status"]} if it.get("status") else None
+
+    def node(self, it, full=False):
+        p = it.get("parent")
+        out = {
+            "id": f"I_{it['number']}", "number": it["number"], "title": it["title"], "state": it["state"],
+            "repository": {"nameWithOwner": self.state.get("repo", "acme/shop")},
+            "labels": conn([{"name": l} for l in it.get("labels", [])]),
+            "assignees": conn([{"login": a} for a in it.get("assignees", [])]),
+            "parent": {"number": p, "state": self.get(p)["state"]} if p else None,
+            "blockedBy": conn([{"number": b, "state": self.items.get(b, {}).get("state", "OPEN")} for b in it.get("blocked_by", [])]),
+            "closedByPullRequestsReferences": conn([{"number": n, "state": "OPEN"} for n in it.get("open_prs", [])]),
+            "projectItems": self.project_items(it),
+        }
+        subs = sorted((i for i in self.items.values() if i.get("parent") == it["number"]), key=lambda i: i["number"])
+        out["subIssues"] = conn([self.node(s) for s in subs])
+        if full:
+            m = it.get("milestone")
+            out.update(body=it.get("body", ""), milestone={"id": f"MI_{m}", "title": m} if m else None,
+                       comments=conn([{"body": c} for c in it.get("comments", [])[-50:]]))
+        return out
+
+    def project(self, v):
+        if v["field"] != "Status":  # real GitHub rejects field(name:) for a name the project lacks
+            fail(f"gh: Could not resolve to a Unions::ProjectV2FieldConfiguration with the name {v['field']}")
+        return {"projectV2": {"id": PROJECT, "field": {"id": "PVTSSF_1", "options": [{"id": f"OPT_{c}", "name": c} for c in COLUMNS]}}}
+
+    def viewer(self):
+        return {"id": f"U_{self.state['viewer']}", "login": self.state["viewer"]}
+
+    def label(self, name):
+        """A label node, or None (as GitHub returns) when the state lists `labels` without it."""
+        return {"id": f"LA_{name}"} if name in self.state.get("labels", [name]) else None
+
+    def types(self):
+        return conn([{"id": f"IT_{t}", "name": t} for t in self.state.get("issue_types", TYPES)])
+
+    def board(self, b):
+        return {"number": b["number"], "title": b.get("title", "Board"), "closed": b.get("closed", False),
+                "owner": {"login": b["owner"]},
+                "fields": conn([{}, {"name": "Status", "options": [{"name": c} for c in b.get("columns", COLUMNS)]}])}
+
+    def who(self, v, out):
+        out["viewer"] = self.viewer()
+        if v.get("named"):
+            out["who"] = {"id": f"U_{v['login']}", "login": v["login"]}
+        return out
+
+    # ------------------------------------------------------------ reads
+    def AwItems(self, v, q):
+        board = sorted((i for i in self.items.values() if i.get("status") is not None), key=lambda i: i["number"])
+        start = int(v.get("after") or 0)
+        page = board[start:start + 100]
+        owner = self.project(v)
+        owner["projectV2"]["items"] = {
+            "pageInfo": {"hasNextPage": start + 100 < len(board), "endCursor": str(start + 100)},
+            "nodes": [{"id": f"PVTI_{i['number']}", "fieldValueByName": self.value(i), "content": self.node(i, full=False)} for i in page]}
+        return self.who(v, {"repositoryOwner": owner})
+
+    def AwIssue(self, v, q):
+        return self.who(v, {"repositoryOwner": self.project(v), "repository": {
+            "id": "R_1", "label": self.label(v["label"]), "issueTypes": self.types(),
+            "issue": self.node(self.get(v["number"]), full=True)}})
+
+    def AwComments(self, v, q):
+        return {"repository": {f"i{n}": {"comments": conn([{"body": c} for c in self.get(int(n)).get("comments", [])[-50:]])}
+                               for n in re.findall(r"\bi(\d+):issue\(", q)}}
+
+    def AwRepo(self, v, q):
+        return {"repositoryOwner": self.project(v), "repository": {
+            "id": "R_1", "issueTypes": self.types(),
+            **{k: self.label(v[k]) for k in ("found", "urgent", "soon", "later")}}}
+
+    def AwOpenIssues(self, v, q):
+        issues = sorted((i for i in self.items.values() if i["state"] == "OPEN"), key=lambda i: i["number"])
+        start = int(v.get("after") or 0)
+        return {"repository": {"issues": {
+            "pageInfo": {"hasNextPage": start + 100 < len(issues), "endCursor": str(start + 100)},
+            "nodes": [{"number": i["number"], "title": i["title"], "labels": conn([{"name": l} for l in i.get("labels", [])])}
+                      for i in issues[start:start + 100]]}}}
+
+    def AwInit(self, v, q):
+        repo = self.state.get("repo", "acme/shop")
+        boards = self.state.get("boards", [{"owner": repo.split("/")[0], "number": 1}])
+        methods = self.state.get("merge_methods", ["merge", "squash", "rebase"])
+        r = {"nameWithOwner": repo, "defaultBranchRef": {"name": self.state.get("default_branch", "main")},
+             "rebaseMergeAllowed": "rebase" in methods, "squashMergeAllowed": "squash" in methods,
+             "mergeCommitAllowed": "merge" in methods, "mergeQueue": {"id": "MQ_1"} if self.state.get("merge_queue") else None,
+             "issueTypes": self.types(),
+             "cards": {"totalCount": sum(1 for i in self.items.values() if i["state"] == "OPEN" and v["card"] in i.get("labels", []))},
+             **{k: self.label(v[k]) for k in ("card", "bullet", "found", "urgent", "soon", "later")}}
+        if not v["named"]:
+            r["projectsV2"] = conn([self.board(b) for b in boards if b.get("linked", True)])
+            return {"repository": r}
+        b = next((b for b in boards if (b["owner"], b["number"]) == (v["powner"], v["pnumber"])), None)
+        if b is None:
+            fail(f"gh: Could not resolve to a ProjectV2 with the number {v['pnumber']}.")
+        return {"repository": r, "repositoryOwner": {"projectV2": self.board(b)}}
+
+    # ------------------------------------------------------------ writes
+    def AwCreateIssue(self, v, q):
+        i = v["input"]
+        n = max([0] + list(self.items) + [p for it in self.items.values() for p in it.get("open_prs", [])]) + 1
+        it = {"number": n, "title": i["title"], "state": "OPEN", "status": None,
+              "labels": [l[3:] for l in i.get("labelIds", [])], "assignees": [], "blocked_by": [],
+              "parent": num(i["parentIssueId"], "I_") if i.get("parentIssueId") else None,
+              "milestone": i["milestoneId"][3:] if i.get("milestoneId") else None, "body": i.get("body", ""),
+              "open_prs": [], "comments": []}
+        if i.get("issueTypeId"):
+            it["type"] = i["issueTypeId"][3:]
+        self.state["items"].append(it)
+        self.items[n] = it
+        return {"createIssue": {"issue": {"id": f"I_{n}", "number": n}}}
+
+    def AwAddItem(self, v, q):
+        it = self.get(num(v["content"], "I_"))
+        if it.get("status") is None:
+            it["status"] = ""  # on the board, no column yet
+        return {"addProjectV2ItemById": {"item": {"id": f"PVTI_{it['number']}"}}}
+
+    def AwSetStatus(self, v, q):
+        it = self.get(num(v["item"], "PVTI_"))
+        if it.get("status") is None:
+            fail("gh: The item does not exist in the project.")
+        it["status"] = v["option"][4:]
+        return {"updateProjectV2ItemFieldValue": {"clientMutationId": None}}
+
+    def AwAssign(self, v, q):
+        it = self.get(num(v["id"], "I_"))
+        it["assignees"] = it.get("assignees", []) + [u[2:] for u in v["users"] if u[2:] not in it.get("assignees", [])]
+        return {"addAssigneesToAssignable": {"clientMutationId": None}}
+
+    def AwAddLabels(self, v, q):
+        it = self.get(num(v["id"], "I_"))
+        it["labels"] = it.get("labels", []) + [l[3:] for l in v["labels"] if l[3:] not in it.get("labels", [])]
+        return {"addLabelsToLabelable": {"clientMutationId": None}}
+
+    def AwRemoveLabels(self, v, q):
+        it = self.get(num(v["id"], "I_"))
+        it["labels"] = [l for l in it.get("labels", []) if f"LA_{l}" not in v["labels"]]
+        return {"removeLabelsFromLabelable": {"clientMutationId": None}}
+
+    def AwComment(self, v, q):
+        self.get(num(v["id"], "I_")).setdefault("comments", []).append(v["body"])
+        return {"addComment": {"clientMutationId": None}}
+
+    def AwSetBody(self, v, q):
+        self.get(num(v["id"], "I_"))["body"] = v["body"]
+        return {"updateIssue": {"clientMutationId": None}}
+
+
+def fail(message):
+    sys.stderr.write(message + "\n")
+    sys.exit(1)
+
+
+def main():
+    path = os.environ["AW_FAKE_GH_STATE"]
+    with open(path) as fh:
+        state = json.load(fh)
+    if sys.argv[1:] == ["repo", "view", "--json", "nameWithOwner"]:  # the repository of the current directory
+        if "AwRepoView" in state.get("fail", []):
+            fail("gh: Resource not accessible by personal access token (AwRepoView)")
+        print(json.dumps({"nameWithOwner": state.get("repo", "acme/shop")}))
+        return
+    if sys.argv[1:] != ["api", "graphql", "--input", "-"]:
+        fail(f"fake gh: unsupported arguments {sys.argv[1:]}")
+    req = json.load(sys.stdin)
+    query, variables = req["query"], req.get("variables") or {}
+    kind, op = re.match(r"\s*(query|mutation)\s+(\w+)", query).groups()
+    mutating = kind == "mutation"
+
+    def log(ok):
+        if mutating:
+            with open(path + ".log", "a") as fh:
+                fh.write(json.dumps({"op": op, "variables": variables, "ok": ok}) + "\n")
+
+    if op in state.get("fail", []):
+        log(False)
+        fail(f"gh: Resource not accessible by personal access token ({op})")
+    handler = getattr(Fake, op, None)
+    if handler is None:
+        fail(f"fake gh: unknown operation {op}")
+    data = handler(Fake(state), variables, query)
+    if mutating:
+        with open(path, "w") as fh:
+            json.dump(state, fh, indent=1, ensure_ascii=False)
+    log(True)
+    print(json.dumps({"data": data}))
+
+
+if __name__ == "__main__":
+    main()

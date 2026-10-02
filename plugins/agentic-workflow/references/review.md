@@ -8,6 +8,8 @@
 - Evidence of checks already performed, with honest limitations.
 - Initial broad slice review or scoped rereview; for rereview include prior IDs,
   dispositions, repairs and affected integration paths.
+- Review packet: when the delivery loop runs, reviewers start from the `aw-router`
+  packet instead of the whole branch ([review packet](loop.md#review-packet)).
 
 Require no source edits, no recursive reviewers, concrete impact and source
 locations. Use `aw-refuter` from [focused delegation](subagents.md), including its
@@ -28,7 +30,7 @@ persona while preserving its claimed identity.
 
 The following launcher is optional for isolated cross-model reviews. Normally
 dispatch through the host directly with the required tools. For the launcher, write the bounded brief and its `Memory status:`
-field first. Use the isolated worker launcher (Opus for the Claude refuter):
+field first. Use the isolated worker launcher (the refuter's `deep` tier):
 
 ```sh
 python3 /path/to/plugin/scripts/run_worker.py --client claude --role aw-refuter \
@@ -70,11 +72,74 @@ or important integration may require broader review. Required coverage must hold
 on the final snapshot, even when evidence is carried forward with a reasoned
 scope assessment. Do not simply replace an old fingerprint with a new one.
 
-The coordinator owns convergence without a fixed attempt cap. Diagnose repeated
-findings, reviewer disagreement, missing tests or a design defect; change strategy
-and record new evidence instead of repeating an unchanged review. Reassign a stuck
-worker or use targeted diagnosis. Ask the user only when their judgment, authority
-or access is necessary. Keep optional refactorings outside the repair scope.
+Keep optional refactorings outside the repair scope. Convergence is decided by the
+review gate below, not by the coordinator's or a reviewer's appetite for another
+round.
+
+## Review ledger and gate
+
+Review rounds are expensive and reviewers always find something. Only a
+demonstrated violation earns a repair, and only a repair earns another round.
+
+**Ledger.** One JSON file per work item, next to its plan (`<plan name>.review.json`).
+The coordinator appends every round after adjudicating it. After a gate only a
+finding's `disposition` and `answer` change; earlier rounds are never rewritten
+otherwise.
+
+```json
+{"item": "S1.2.T1",
+ "rounds": [{"round": 1, "stage": "local", "snapshot": "<head or fingerprint>",
+   "reviewers": [{"name": "claude", "status": "complete"}, {"name": "codex", "status": "complete"}],
+   "findings": [{"id": "R1-C1", "reviewer": "claude", "severity": "P1", "location": "src/a.mjs:10",
+     "claim": "...", "evidence": "...", "class": "actionable",
+     "disposition": "open", "answer": "", "repeats": null}]}],
+ "gates": [{"after_round": 1, "verdict": "repair", "repair": ["R1-C1"], "reclassified": [],
+   "repeats": [], "found_work": [], "reason": "..."}]}
+```
+
+`stage` is `local` or `remote` (pull request reviews). `class` is `actionable`,
+`advisory` or `rejected` as defined above. `disposition` is `open`, `repaired`,
+`answered` (one line in `answer`, no code change), `rejected`, or `filed #N` for
+[found work](loop.md#found-work). `repeats` names the earlier finding it restates.
+
+**Gate.** After each adjudicated round and before any repair or further round,
+dispatch `aw-arbiter` with the ledger and the plan. It reads every round, not only
+the last, and writes one verdict. The verdict binds the coordinator, which copies
+it into `gates`.
+
+1. *Reclassify.* A finding stays actionable only when its evidence demonstrates the
+   violation: a failing command or reproduction, a quoted contract line (acceptance,
+   invariant, scope fence) the change breaks, or wrong behavior shown at the cited
+   location. Style, naming, wording, optional refactors, "could" and "consider"
+   without a demonstration, and wishes for tests of untouched code are advisory
+   whatever severity the reviewer or the coordinator gave them. A wish that belongs
+   to a sibling bullet's deliverable is advisory or rejected; neither is
+   actionable. The gate only screens out: it never raises a class.
+2. *Repeats.* A finding that restates an earlier answered or rejected one without
+   new evidence is rejected as a repeat. The same advisory raised by both reviewers
+   is still advisory.
+3. *Out of scope but real.* A demonstrated defect outside the scope fence is not
+   repaired here; it becomes found work and its disposition is `filed #N`. It
+   does not count as actionable for the verdict.
+4. *Verdict.*
+   - `stop`: the latest round has no actionable finding and no earlier actionable
+     finding is still `open`. Advisory findings get a one-line answer in the
+     ledger and no code change. The review loop ends.
+   - `repair`: the listed actionable IDs go to the builder, and nothing else does.
+     One rereview follows, from a delta packet covering that repair.
+   - `replan`: the third round of the stage that still raised actionable findings.
+     More rounds will not converge. The coordinator diagnoses the cause across the
+     whole ledger (plan defect, design defect, missing test, reviewer disagreement),
+     replans or repairs the design once, and one rereview follows.
+   - `ask`: actionable findings remain after the replan's rereview. The coordinator
+     asks the user one question with the ledger summarized by round.
+
+The coordinator may contest a reclassification once per round by adding evidence
+to the finding and running the gate again. It never starts a round or sends a
+finding to a builder without a `repair` or `replan` verdict. Remote review rounds
+enter the same ledger and pass the same gate; the round count restarts at the
+pull request. A project's stricter stopping rule still applies. A reviewer that did
+not complete leaves coverage incomplete whatever the verdict says.
 
 ## Final verification
 

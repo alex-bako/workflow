@@ -40,7 +40,9 @@ branch policy and the exact remote tip. Publish with an explicit expected-SHA
 lease; a changed remote tip requires inspection, never a blind retry or plain
 force push. Shared/protected branches or someone else's commits require an
 agreed compatible history strategy. Never rewrite the default branch. This
-workflow authorizes no unrelated branch mutation, merge or deployment.
+workflow authorizes no unrelated branch mutation, merge or deployment. The single
+merge exception is a project tracker policy with `merge.allowed`, under
+[the loop's merge conditions](loop.md#merge).
 
 ## Publication and review
 
@@ -73,13 +75,15 @@ While awaiting remote review:
    the inbox after completion so late comments are included.
 3. Adjudicate findings with the existing review protocol. Preserve source IDs,
    bullet ownership and actionable/advisory/rejected/resolved reasons. An outdated
-   or resolved GitHub thread is not proof the underlying issue was fixed. Fix
-   valid findings; retain reasons for advisory/rejected ones. Do not post replies
-   or resolve remote threads unless that communication is authorized.
-4. Repair actionable findings, recheck affected behavior and independent coverage.
-   Amend/fold into the original bullet, update the same PR, record its new head,
-   and wait again for required remote coverage/checks on that head. Preserve the
-   finding ledger and evidence. Broaden local coverage for cross-bullet fixes.
+   or resolved GitHub thread is not proof the underlying issue was fixed. Append
+   the round to the [review ledger](review.md#review-ledger-and-gate) (stage
+   `remote`) and run its gate; retain reasons for advisory/rejected ones. Do not
+   post replies or resolve remote threads unless that communication is authorized.
+4. Repair only the IDs a gate `repair` or `replan` verdict lists, recheck affected
+   behavior and independent coverage. Amend/fold into the original bullet, update
+   the same PR, record its new head, and wait again for required remote
+   coverage/checks on that head. Preserve the finding ledger and evidence. Broaden
+   local coverage for cross-bullet fixes.
 5. Completion is allowed only after all expected reviews completed, every incoming
    finding was adjudicated with no actionable item left, and required checks
    passed for the latest published head. Fetch head and inbox once more immediately

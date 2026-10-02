@@ -23,7 +23,8 @@ no Python scripts, graph run, JSON evidence or special setup is required.
 4. Own recovery. For repeated failure inspect new evidence and change strategy,
    narrow the problem, reproduce it, or reassign work. Adjudicate reviewer disputes
    against accepted behavior. There is no repair-attempt ceiling or permission
-   request to continue fixing. Do not rerun an unchanged failed approach. Temporary
+   request to continue fixing, except that the [review gate](../../references/review.md#review-ledger-and-gate)
+   bounds review rounds. Do not rerun an unchanged failed approach. Temporary
    provider limits need a resumable note and a supported wait, not a product question.
 5. Continue within existing authority. Ask the user only for a material product
    choice, additional authority, or access you cannot obtain. Do not weaken acceptance

@@ -1,0 +1,124 @@
+{
+ "item": "S2.1.T1",
+ "rounds": [
+  {
+   "round": 1,
+   "stage": "local",
+   "snapshot": "wt:3f9c1a0",
+   "reviewers": [
+    {
+     "name": "claude",
+     "status": "complete"
+    },
+    {
+     "name": "codex",
+     "status": "complete"
+    }
+   ],
+   "findings": [
+    {
+     "id": "R1-C1",
+     "reviewer": "claude",
+     "severity": "P1",
+     "location": "src/duration.mjs:6-7",
+     "claim": "parseDuration accepts a repeated unit: \"1h1h\" returns 7200 instead of throwing.",
+     "evidence": "Acceptance: \"Units may appear once each, in the order d, h, m, s; anything else throws `RangeError`, including `\"\"` and `\"5\"`.\" `node -e 'import(\"./src/duration.mjs\").then(m => console.log(m.parseDuration(\"1h1h\")))'` prints 7200.",
+     "class": "actionable",
+     "disposition": "repaired",
+     "answer": "",
+     "repeats": null
+    },
+    {
+     "id": "R1-X1",
+     "reviewer": "codex",
+     "severity": "P3",
+     "location": "src/duration.mjs:2",
+     "claim": "Rename UNITS to UNIT_SECONDS; the name does not say what the numbers are.",
+     "evidence": "Naming preference; no behavior affected.",
+     "class": "advisory",
+     "disposition": "answered",
+     "answer": "Kept: UNITS is the plan's term and the table sits next to its only uses.",
+     "repeats": null
+    }
+   ]
+  },
+  {
+   "round": 2,
+   "stage": "local",
+   "snapshot": "wt:8d20e47",
+   "reviewers": [
+    {
+     "name": "claude",
+     "status": "complete"
+    },
+    {
+     "name": "codex",
+     "status": "complete"
+    }
+   ],
+   "findings": [
+    {
+     "id": "R2-C1",
+     "reviewer": "claude",
+     "severity": "P2",
+     "location": "src/duration.mjs:19-23",
+     "claim": "formatDuration could use reduce instead of a for loop with a mutable rest.",
+     "evidence": "Style; the loop returns the right parts for every acceptance example.",
+     "class": "advisory",
+     "disposition": "open",
+     "answer": "",
+     "repeats": null
+    },
+    {
+     "id": "R2-C2",
+     "reviewer": "claude",
+     "severity": "P3",
+     "location": "src/clock.mjs:4-6",
+     "claim": "Consider adding a test for addSeconds.",
+     "evidence": "No test file imports src/clock.mjs.",
+     "class": "advisory",
+     "disposition": "open",
+     "answer": "",
+     "repeats": null
+    },
+    {
+     "id": "R2-X1",
+     "reviewer": "codex",
+     "severity": "P1",
+     "location": "src/duration.mjs:3",
+     "claim": "PATTERN is hard to read and maintain; it should be split into named groups before this ships.",
+     "evidence": "The regex on line 3 has four unnamed optional groups; adding a unit later would be easy to get wrong.",
+     "class": "actionable",
+     "disposition": "open",
+     "answer": "",
+     "repeats": null
+    },
+    {
+     "id": "R2-X2",
+     "reviewer": "codex",
+     "severity": "P2",
+     "location": "src/duration.mjs:2",
+     "claim": "UNITS should be called UNIT_SECONDS so readers know the values are seconds.",
+     "evidence": "Readability: the table name hides its unit.",
+     "class": "advisory",
+     "disposition": "open",
+     "answer": "",
+     "repeats": null
+    }
+   ]
+  }
+ ],
+ "gates": [
+  {
+   "after_round": 1,
+   "verdict": "repair",
+   "repair": [
+    "R1-C1"
+   ],
+   "reclassified": [],
+   "repeats": [],
+   "found_work": [],
+   "reason": "R1-C1 demonstrated by a failing command against an acceptance line; local round 1 of 1."
+  }
+ ]
+}

@@ -19,13 +19,16 @@ warrants it; preserve agreed coverage. Join required results, including failures
 Adjudicate findings before edits. Retain IDs, impact, evidence and reasons for
 actionable/advisory/rejected dispositions. Ask for new evidence before reopening
 an unchanged rejected finding. Never suppress a demonstrated serious issue just
-because it is outside the original diff.
+because it is outside the original diff; outside the scope fence it becomes
+[found work](../../references/loop.md#found-work).
 
-After a repair, rereview the changed region, affected integration paths and prior
+Append each adjudicated round to the review ledger and run the
+[review gate](../../references/review.md#review-ledger-and-gate) (`aw-arbiter`)
+before any repair or further round. Its verdict binds: repair only the IDs it
+lists, answer advisories in the ledger, stop, replan or ask as it says. After a
+repair, rereview the changed region, affected integration paths and prior
 actionable findings. Do not restart an unrelated full audit. Broaden when contracts
-or risk changed. Missing output is not clean. The coordinator diagnoses repeated
-failures and disputes, changes approach or reassigns work; no attempt count
-requires user escalation. Do not weaken acceptance to end the loop.
+or risk changed. Missing output is not clean. Do not weaken acceptance to end the loop.
 
 For final verification, check required reviews still cover the current snapshot,
 all acceptance criteria are satisfied, and required checks passed. Record actual
@@ -35,5 +38,6 @@ repair. For UI changes perform browser/design QA from the review protocol.
 
 When PR delivery is authorized, follow [delivery policy](../../references/delivery.md): wait for
 expected remote reviews, inspect all incoming findings and checks on the latest
-head, repair valid findings in their original bullet, and update/recheck the same
+head, append each remote round to the same ledger and gate (stage `remote`), repair
+only the IDs its verdict lists in their original bullet, and update/recheck the same
 PR. PR creation, green CI alone and an empty inbox are not completion.

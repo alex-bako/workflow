@@ -1,0 +1,35 @@
+command: node --test test/storage.test.mjs
+commit: 4f2c9a1 (main, merge of pull request #11)
+environment: node 22.9.0, linux x64, CI runner ubuntu-24.04
+first seen: 2026-09-30, required check `test` on main
+
+run 01: pass  ok 1 - creates an item; ok 2 - saves and reloads an item
+run 02: pass  ok 1 - creates an item; ok 2 - saves and reloads an item
+run 03: pass  ok 1 - creates an item; ok 2 - saves and reloads an item
+run 04: pass  ok 1 - creates an item; ok 2 - saves and reloads an item
+run 05: pass  ok 1 - creates an item; ok 2 - saves and reloads an item
+run 06: pass  ok 1 - creates an item; ok 2 - saves and reloads an item
+run 07: FAIL  not ok 2 - saves and reloads an item
+run 08: pass  ok 1 - creates an item; ok 2 - saves and reloads an item
+run 09: pass  ok 1 - creates an item; ok 2 - saves and reloads an item
+run 10: pass  ok 1 - creates an item; ok 2 - saves and reloads an item
+run 11: pass  ok 1 - creates an item; ok 2 - saves and reloads an item
+run 12: FAIL  not ok 2 - saves and reloads an item
+run 13: pass  ok 1 - creates an item; ok 2 - saves and reloads an item
+run 14: pass  ok 1 - creates an item; ok 2 - saves and reloads an item
+run 15: pass  ok 1 - creates an item; ok 2 - saves and reloads an item
+run 16: pass  ok 1 - creates an item; ok 2 - saves and reloads an item
+run 17: pass  ok 1 - creates an item; ok 2 - saves and reloads an item
+run 18: FAIL  not ok 2 - saves and reloads an item
+run 19: pass  ok 1 - creates an item; ok 2 - saves and reloads an item
+run 20: pass  ok 1 - creates an item; ok 2 - saves and reloads an item
+
+summary: 20 runs, 17 passed, 3 failed (runs 07, 12, 18)
+
+failing assertion (identical in all 3 failed runs):
+  not ok 2 - saves and reloads an item
+    AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+    + actual - expected
+    + undefined
+    - 'Buy milk'
+        at TestContext.<anonymous> (test/storage.test.mjs:21:10)

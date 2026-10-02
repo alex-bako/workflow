@@ -47,12 +47,14 @@ and QA in the order the work needs. Skills are tools, not mandatory sequential
 gates. Run checks early; reuse evidence while code, environment and scope still match.
 
 Recovery belongs to the coordinator. There is no fixed repair/review-attempt cap
-and no user escalation because a counter expired. Diagnose repeated failures,
-reproduce disputed findings, change the approach, split work or reassign it. Record
-what was learned and why the next attempt differs. Do not repeat an unchanged
-failing action. For temporary limits checkpoint and resume when available. Ask the
-user only when progress needs their product judgment, authority or unavailable
-access. Preserve acceptance criteria while adapting the technical approach.
+and no user escalation because a counter expired, except that the
+[review gate](review.md#review-ledger-and-gate) bounds review rounds. Diagnose
+repeated failures, reproduce disputed findings, change the approach, split work or
+reassign it. Record what was learned and why the next attempt differs. Do not
+repeat an unchanged failing action. For temporary limits checkpoint and resume when
+available. Ask the user only when progress needs their product judgment, authority
+or unavailable access. Preserve acceptance criteria while adapting the technical
+approach.
 
 Before delegation read [focused delegation](subagents.md). Native workers are the
 normal path; handle small work directly. Keep one owner per edited file and one
@@ -90,3 +92,5 @@ coverage. For UI changes use [browser/design QA](review.md#browser-and-design-qa
 Read [delivery policy](delivery.md) before Git publication. When PR delivery is
 authorized, create/reuse the PR, address incoming actionable findings and verify
 required reviews/checks on the latest head. Do not infer merge/deploy authority.
+The single merge exception is a project tracker policy with `merge.allowed`, under
+[the loop's merge conditions](loop.md#merge).

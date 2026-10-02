@@ -1,0 +1,174 @@
+diff --git a/package-lock.json b/package-lock.json
+index 02f2f1e..d2c38c5 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -1,12 +1,12 @@
+ {
+   "name": "shop",
+-  "version": "0.3.0",
++  "version": "0.4.0",
+   "lockfileVersion": 3,
+   "requires": true,
+   "packages": {
+     "": {
+       "name": "shop",
+-      "version": "0.3.0"
++      "version": "0.4.0"
+     }
+   }
+ }
+diff --git a/package.json b/package.json
+index a921866..ed9a7d6 100644
+--- a/package.json
++++ b/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "shop",
+-  "version": "0.3.0",
++  "version": "0.4.0",
+   "private": true,
+   "type": "module",
+   "scripts": { "test": "node --test" }
+diff --git a/src/cart.mjs b/src/cart.mjs
+index 7bcaba0..7c9d444 100644
+--- a/src/cart.mjs
++++ b/src/cart.mjs
+@@ -4,5 +4,5 @@ import { parseAmount, formatAmount, lineQuantity } from "./money.mjs";
+ export function cartTotal(lines) {
+   let total = 0;
+   for (const line of lines) total += parseAmount(line.price) * lineQuantity(line);
+-  return formatAmount(Math.round(total * 100) / 100);
++  return formatAmount(total);
+ }
+diff --git a/src/generated/schema.mjs b/src/generated/schema.mjs
+index 7f77837..e4f1df4 100644
+--- a/src/generated/schema.mjs
++++ b/src/generated/schema.mjs
+@@ -1,5 +1,5 @@
+ // @generated from the order schema of the API repository. Do not edit.
+-// digest: 5f0c2a91d4
++// digest: a83be7710c
+ 
+ export const orderLineSchema = {
+   type: "object",
+@@ -14,7 +14,7 @@ export const orderLineSchema = {
+     },
+     price: {
+       type: "string",
+-      description: "Unit price, dollar text such as 12.50",
++      description: "Unit price, dollar text such as 12.50 or $3",
+     },
+     quantity: {
+       type: "integer",
+diff --git a/src/invoice.mjs b/src/invoice.mjs
+index d9b76ee..c7a713b 100644
+--- a/src/invoice.mjs
++++ b/src/invoice.mjs
+@@ -1,4 +1,4 @@
+-import { parseAmount, lineQuantity } from "./money.mjs";
++import { parseAmount, formatAmount, lineQuantity } from "./money.mjs";
+ 
+ // Header printed above every invoice.
+ export function invoiceHeader(number, date) {
+@@ -9,5 +9,5 @@ export function invoiceHeader(number, date) {
+ export function invoiceLine(line) {
+   const unit = parseAmount(line.price);
+   const sum = unit * lineQuantity(line);
+-  return `${line.name} x${line.quantity} @ $${unit.toFixed(2)} = $${sum.toFixed(2)}`;
++  return `${line.name} x${line.quantity} @ ${formatAmount(unit)} = ${formatAmount(sum)}`;
+ }
+diff --git a/src/money.mjs b/src/money.mjs
+index 1d03a13..a136c03 100644
+--- a/src/money.mjs
++++ b/src/money.mjs
+@@ -1,19 +1,23 @@
+-// Money helpers.
++// Money helpers. Amounts are integer cents everywhere.
+ 
+ /**
+  * Parse a user-entered price such as "12.50" or "$3".
+- * @returns {number} the amount in dollars, e.g. 12.5
++ * @returns {number} the amount in integer cents, e.g. 1250
+  * @throws {RangeError} when the text is not a non-negative amount below one million with at most two decimals
+  */
+ export function parseAmount(text) {
+-  const value = Number(String(text).trim().replace(/^\$/, ""));
+-  if (!/^\$?\d{1,6}(\.\d{1,2})?$/.test(String(text).trim())) throw new RangeError(`bad amount: ${text}`);
+-  return value;
++  const m = /^\$?(\d{1,6})(?:\.(\d{1,2}))?$/.exec(String(text).trim());
++  if (!m) throw new RangeError(`bad amount: ${text}`);
++  return Number(m[1]) * 100 + Number((m[2] ?? "").padEnd(2, "0"));
+ }
+ 
+-/** Format a dollar amount as "$12.50". */
+-export function formatAmount(dollars) {
+-  return `$${dollars.toFixed(2)}`;
++/**
++ * Format integer cents as "$12.50".
++ * @throws {RangeError} unless cents is a non-negative safe integer
++ */
++export function formatAmount(cents) {
++  if (!Number.isSafeInteger(cents) || cents < 0) throw new RangeError(`bad cents: ${cents}`);
++  return `$${(cents - (cents % 100)) / 100}.${String(cents % 100).padStart(2, "0")}`;
+ }
+ 
+ /** Quantity of an order line: a whole number from 1 to 9999. */
+diff --git a/test/cart.test.mjs b/test/cart.test.mjs
+index bc16d17..d51e171 100644
+--- a/test/cart.test.mjs
++++ b/test/cart.test.mjs
+@@ -2,6 +2,7 @@ import { test } from "node:test";
+ import assert from "node:assert/strict";
+ import { cartTotal } from "../src/cart.mjs";
+ 
+-test("totals cart lines", () => {
++test("totals cart lines without float drift", () => {
+   assert.equal(cartTotal([{ name: "Tea", price: "3.50", quantity: 2 }, { name: "Mug", price: "$0.10", quantity: 3 }]), "$7.30");
++  assert.equal(cartTotal([{ name: "Pin", price: "0.10", quantity: 3 }, { name: "Pen", price: "0.20", quantity: 1 }]), "$0.50");
+ });
+diff --git a/test/invoice.test.mjs b/test/invoice.test.mjs
+new file mode 100644
+index 0000000..4d661fe
+--- /dev/null
++++ b/test/invoice.test.mjs
+@@ -0,0 +1,7 @@
++import { test } from "node:test";
++import assert from "node:assert/strict";
++import { invoiceLine } from "../src/invoice.mjs";
++
++test("prints an invoice line in dollars", () => {
++  assert.equal(invoiceLine({ name: "Tea", price: "3.50", quantity: 2 }), "Tea x2 @ $3.50 = $7.00");
++});
+diff --git a/test/money.test.mjs b/test/money.test.mjs
+index a0507ff..862d719 100644
+--- a/test/money.test.mjs
++++ b/test/money.test.mjs
+@@ -2,9 +2,12 @@ import { test } from "node:test";
+ import assert from "node:assert/strict";
+ import { parseAmount, formatAmount } from "../src/money.mjs";
+ 
+-test("parses dollars", () => {
+-  assert.equal(parseAmount("12.50"), 12.5);
+-  assert.equal(parseAmount("$3"), 3);
++test("parses integer cents", () => {
++  assert.equal(parseAmount("12.50"), 1250);
++  assert.equal(parseAmount("$3"), 300);
++  assert.equal(parseAmount("0.10"), 10);
++  assert.equal(parseAmount("0.29"), 29);
++  assert.equal(parseAmount("1.5"), 150);
+ });
+ 
+ test("rejects bad input", () => {
+@@ -12,6 +15,10 @@ test("rejects bad input", () => {
+   assert.throws(() => parseAmount("-1"), RangeError);
+ });
+ 
+-test("formats dollars", () => {
+-  assert.equal(formatAmount(12.5), "$12.50");
++test("formats cents", () => {
++  assert.equal(formatAmount(1250), "$12.50");
++  assert.equal(formatAmount(5), "$0.05");
++  assert.equal(formatAmount(Number.MAX_SAFE_INTEGER), "$90071992547409.91");
++  assert.throws(() => formatAmount(2 ** 53), RangeError);
++  assert.throws(() => formatAmount(12.5), RangeError);
+ });

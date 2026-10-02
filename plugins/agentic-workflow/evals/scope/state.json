@@ -1,0 +1,13 @@
+{
+  "viewer": "dev",
+  "items": [
+    {"number": 1, "title": "S1.1 — Add and list items", "state": "CLOSED", "status": "Done",
+     "labels": ["roadmap"], "assignees": ["dev"], "blocked_by": [], "parent": null,
+     "milestone": "Stage 1", "body": "Add a line, list items, mark read.", "open_prs": [], "comments": []},
+    {"number": 2, "title": "S1.2 — Tags on items", "state": "OPEN", "status": "Ready",
+     "labels": ["roadmap"], "assignees": [], "blocked_by": [1], "parent": null,
+     "milestone": "Stage 1",
+     "body": "Authority: docs/roadmap/ROADMAP.md, \"S1.2 — Tags on items\".\n\n1. `T1` — Parse `#tags` from an item line into `tags`.\n2. `T2` — Filter the list by one tag.\n3. `T3` — Show per-tag counts in the summary line.\n",
+     "open_prs": [], "comments": []}
+  ]
+}
