@@ -1,6 +1,6 @@
 {
   "name": "agentic-workflow",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Human-led planning, coordinator-led delivery and recovery, independent verification and optional behavioral skill evals.",
   "author": {
     "name": "Alex Bako"
