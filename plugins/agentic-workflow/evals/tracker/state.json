@@ -1,0 +1,214 @@
+{
+ "viewer": "dev",
+ "repo": "acme/shop",
+ "fail": [],
+ "items": [
+  {
+   "number": 1,
+   "title": "S1 — Storefront",
+   "state": "OPEN",
+   "status": "In progress",
+   "labels": [
+    "roadmap",
+    "epic"
+   ],
+   "assignees": [],
+   "blocked_by": [],
+   "parent": null,
+   "milestone": "Stage 1",
+   "body": "Milestone S1. Its cards are sub-issues.",
+   "open_prs": [],
+   "comments": []
+  },
+  {
+   "number": 2,
+   "title": "S1.1 — Product catalogue page",
+   "state": "OPEN",
+   "status": "In progress",
+   "labels": [
+    "roadmap"
+   ],
+   "assignees": [
+    "dev"
+   ],
+   "blocked_by": [],
+   "parent": 1,
+   "milestone": "Stage 1",
+   "body": "Roadmap card S1.1. Scope, contracts and acceptance live in ROADMAP.md.\n\n### Tracer bullets\n\n1. `S1.1.T1` — Failing catalogue spec: the page lists every published product with price and stock. The spec fails on main.\n2. `S1.1.T2` — Render the catalogue from the products API and make the spec pass.\n",
+   "open_prs": [],
+   "comments": [
+    "<!-- aw:claim branch=feat/s1.1-catalogue phase=plan -->\nClaimed by @dev on branch `feat/s1.1-catalogue`, phase plan."
+   ]
+  },
+  {
+   "number": 3,
+   "title": "S1.1.T1 — Failing catalogue spec: the page lists every published product with price and stock",
+   "state": "CLOSED",
+   "status": "Done",
+   "labels": [
+    "tracer-bullet"
+   ],
+   "assignees": [
+    "dev"
+   ],
+   "blocked_by": [],
+   "parent": 2,
+   "milestone": "Stage 1",
+   "body": "Failing catalogue spec.\n\nCard: #2\n\n<!-- aw:plan:start -->\nPlan for T1.\n<!-- aw:plan:end -->\n",
+   "open_prs": [],
+   "comments": []
+  },
+  {
+   "number": 4,
+   "title": "S1.1.T2 — Render the catalogue from the products API and make the spec pass",
+   "state": "OPEN",
+   "status": "Backlog",
+   "labels": [
+    "tracer-bullet"
+   ],
+   "assignees": [],
+   "blocked_by": [],
+   "parent": 2,
+   "milestone": "Stage 1",
+   "body": "Render the catalogue from the products API and make the spec pass.\n\nCard: #2\n\n<!-- aw:plan:start -->\n<!-- aw:plan:end -->\n",
+   "open_prs": [],
+   "comments": []
+  },
+  {
+   "number": 5,
+   "title": "S1.2 — Shopping cart",
+   "state": "OPEN",
+   "status": "Ready",
+   "labels": [
+    "roadmap"
+   ],
+   "assignees": [],
+   "blocked_by": [
+    2
+   ],
+   "parent": 1,
+   "milestone": "Stage 1",
+   "body": "Roadmap card S1.2. Scope, contracts and acceptance live in ROADMAP.md.\n\n### Tracer bullets\n\n1. `S1.2.T1` — Cart spec.\n2. `S1.2.T2` — Cart page.\n",
+   "open_prs": [],
+   "comments": []
+  },
+  {
+   "number": 6,
+   "title": "S1.3 — Product search",
+   "state": "OPEN",
+   "status": "Ready",
+   "labels": [
+    "roadmap"
+   ],
+   "assignees": [],
+   "blocked_by": [],
+   "parent": 1,
+   "milestone": "Stage 1",
+   "body": "Roadmap card S1.3. Scope, contracts and acceptance live in ROADMAP.md.\n\n### Tracer bullets\n\n1. `S1.3.T1` — Failing search spec: a query returns matching products ranked by title match.\n2. `S1.3.T2` — Search box and results list wired to the search API.\n",
+   "open_prs": [],
+   "comments": []
+  },
+  {
+   "number": 7,
+   "title": "S1.4 — Checkout",
+   "state": "OPEN",
+   "status": "Ready",
+   "labels": [
+    "roadmap"
+   ],
+   "assignees": [
+    "ana"
+   ],
+   "blocked_by": [],
+   "parent": 1,
+   "milestone": "Stage 1",
+   "body": "Roadmap card S1.4. Scope, contracts and acceptance live in ROADMAP.md.\n\n### Tracer bullets\n\n1. `S1.4.T1` — Checkout spec.\n",
+   "open_prs": [],
+   "comments": []
+  },
+  {
+   "number": 8,
+   "title": "S1.5 — Wishlist",
+   "state": "OPEN",
+   "status": "Ready",
+   "labels": [
+    "roadmap"
+   ],
+   "assignees": [],
+   "blocked_by": [],
+   "parent": 1,
+   "milestone": "Stage 1",
+   "body": "Roadmap card S1.5. Scope, contracts and acceptance live in ROADMAP.md.\n\n### Tracer bullets\n\n1. `S1.5.T1` — Wishlist spec.\n",
+   "open_prs": [
+    20
+   ],
+   "comments": []
+  },
+  {
+   "number": 9,
+   "title": "S1.6 — Product reviews",
+   "state": "OPEN",
+   "status": "Backlog",
+   "labels": [
+    "roadmap"
+   ],
+   "assignees": [],
+   "blocked_by": [],
+   "parent": 1,
+   "milestone": "Stage 1",
+   "body": "Roadmap card S1.6. Scope, contracts and acceptance live in ROADMAP.md.\n\n### Tracer bullets\n\n1. `S1.6.T1` — Reviews spec.\n",
+   "open_prs": [],
+   "comments": []
+  },
+  {
+   "number": 10,
+   "title": "S1.7 — Recommendations",
+   "state": "OPEN",
+   "status": "In progress",
+   "labels": [
+    "roadmap"
+   ],
+   "assignees": [
+    "ana"
+   ],
+   "blocked_by": [],
+   "parent": 1,
+   "milestone": "Stage 1",
+   "body": "Being prototyped outside the bullet flow.",
+   "open_prs": [],
+   "comments": []
+  },
+  {
+   "number": 11,
+   "title": "S1.8 — Gift cards",
+   "state": "OPEN",
+   "status": "Ready",
+   "labels": [
+    "roadmap"
+   ],
+   "assignees": [],
+   "blocked_by": [],
+   "parent": 1,
+   "milestone": "Stage 2",
+   "body": "Roadmap card S1.8. Scope, contracts and acceptance live in ROADMAP.md.\n\n### Tracer bullets\n\n1. `S1.8.T1` — Gift card balance spec.\n",
+   "open_prs": [],
+   "comments": []
+  },
+  {
+   "number": 12,
+   "title": "S1.9 — Newsletter signup",
+   "state": "CLOSED",
+   "status": "Ready",
+   "labels": [
+    "roadmap"
+   ],
+   "assignees": [],
+   "blocked_by": [],
+   "parent": 1,
+   "milestone": "Stage 1",
+   "body": "Roadmap card S1.9. Scope, contracts and acceptance live in ROADMAP.md.\n\n### Tracer bullets\n\n1. `S1.9.T1` — Signup spec.\n",
+   "open_prs": [],
+   "comments": []
+  }
+ ]
+}

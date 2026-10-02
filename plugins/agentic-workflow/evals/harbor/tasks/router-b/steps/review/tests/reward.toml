@@ -1,0 +1,3 @@
+# One failed mandatory criterion fails the step.
+[scoring.case]
+aggregation = "all-pass"

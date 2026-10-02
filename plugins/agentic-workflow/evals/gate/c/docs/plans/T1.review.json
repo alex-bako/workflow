@@ -1,0 +1,152 @@
+{
+ "item": "S2.1.T1",
+ "rounds": [
+  {
+   "round": 1,
+   "stage": "local",
+   "snapshot": "wt:0a6d5f3",
+   "reviewers": [
+    {
+     "name": "claude",
+     "status": "complete"
+    },
+    {
+     "name": "codex",
+     "status": "complete"
+    }
+   ],
+   "findings": [
+    {
+     "id": "R1-C1",
+     "reviewer": "claude",
+     "severity": "P1",
+     "location": "src/duration.mjs:6-7",
+     "claim": "parseDuration accepts a repeated unit: \"1h1h\" returns 7200 instead of throwing.",
+     "evidence": "Acceptance: \"Units may appear once each, in the order d, h, m, s; anything else throws `RangeError`, including `\"\"` and `\"5\"`.\" `node -e 'import(\"./src/duration.mjs\").then(m => console.log(m.parseDuration(\"1h1h\")))'` prints 7200.",
+     "class": "actionable",
+     "disposition": "repaired",
+     "answer": "",
+     "repeats": null
+    }
+   ]
+  },
+  {
+   "round": 2,
+   "stage": "local",
+   "snapshot": "wt:7be1c90",
+   "reviewers": [
+    {
+     "name": "claude",
+     "status": "complete"
+    },
+    {
+     "name": "codex",
+     "status": "complete"
+    }
+   ],
+   "findings": [
+    {
+     "id": "R2-X1",
+     "reviewer": "codex",
+     "severity": "P1",
+     "location": "src/duration.mjs:6",
+     "claim": "parseDuration accepts a bare number: \"5\" returns 5 instead of throwing.",
+     "evidence": "Acceptance: \"Units may appear once each, in the order d, h, m, s; anything else throws `RangeError`, including `\"\"` and `\"5\"`.\" `node -e 'import(\"./src/duration.mjs\").then(m => console.log(m.parseDuration(\"5\")))'` prints 5.",
+     "class": "actionable",
+     "disposition": "repaired",
+     "answer": "",
+     "repeats": null
+    },
+    {
+     "id": "R2-C1",
+     "reviewer": "claude",
+     "severity": "P3",
+     "location": "src/duration.mjs:2",
+     "claim": "UNITS could be frozen with Object.freeze.",
+     "evidence": "Defensive style; nothing writes to it.",
+     "class": "advisory",
+     "disposition": "answered",
+     "answer": "Module-private table; nothing writes to it.",
+     "repeats": null
+    }
+   ]
+  },
+  {
+   "round": 3,
+   "stage": "local",
+   "snapshot": "wt:e2f8146",
+   "reviewers": [
+    {
+     "name": "claude",
+     "status": "complete"
+    },
+    {
+     "name": "codex",
+     "status": "complete"
+    }
+   ],
+   "findings": [
+    {
+     "id": "R3-C1",
+     "reviewer": "claude",
+     "severity": "P2",
+     "location": "src/duration.mjs:9-13",
+     "claim": "parseDuration accepts units out of order: \"30m1h\" returns 5400 instead of throwing.",
+     "evidence": "Acceptance: \"Units may appear once each, in the order d, h, m, s; anything else throws `RangeError`, including `\"\"` and `\"5\"`.\" `node -e 'import(\"./src/duration.mjs\").then(m => console.log(m.parseDuration(\"30m1h\")))'` prints 5400. The loop checks repeats only, never the order.",
+     "class": "actionable",
+     "disposition": "open",
+     "answer": "",
+     "repeats": null
+    },
+    {
+     "id": "R3-X1",
+     "reviewer": "codex",
+     "severity": "P1",
+     "location": "src/duration.mjs:12",
+     "claim": "parseDuration returns fractional seconds: \"0.5s\" returns 0.5.",
+     "evidence": "Invariant: \"A duration is an integer number of seconds; no fractional values.\" `node -e 'import(\"./src/duration.mjs\").then(m => console.log(m.parseDuration(\"0.5s\")))'` prints 0.5. Line 12 uses Number.parseFloat and SHAPE allows a decimal part.",
+     "class": "actionable",
+     "disposition": "open",
+     "answer": "",
+     "repeats": null
+    },
+    {
+     "id": "R3-C2",
+     "reviewer": "claude",
+     "severity": "P3",
+     "location": "src/duration.mjs:3",
+     "claim": "SHAPE could be named DURATION_SHAPE.",
+     "evidence": "Naming preference.",
+     "class": "advisory",
+     "disposition": "open",
+     "answer": "",
+     "repeats": null
+    }
+   ]
+  }
+ ],
+ "gates": [
+  {
+   "after_round": 1,
+   "verdict": "repair",
+   "repair": [
+    "R1-C1"
+   ],
+   "reclassified": [],
+   "repeats": [],
+   "found_work": [],
+   "reason": "R1-C1 demonstrated against an acceptance line; local round 1 of 1."
+  },
+  {
+   "after_round": 2,
+   "verdict": "repair",
+   "repair": [
+    "R2-X1"
+   ],
+   "reclassified": [],
+   "repeats": [],
+   "found_work": [],
+   "reason": "R2-X1 demonstrated against an acceptance line; local round 2 of 2."
+  }
+ ]
+}

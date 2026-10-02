@@ -14,14 +14,20 @@ import subprocess
 import sys
 import tempfile
 
-ROLES = {
-    "aw-scout": ("gpt-5.6-luna", "low", "haiku", 8, "Read,Grep,Glob,Write"),
-    "aw-researcher": ("gpt-5.6-terra", "medium", "sonnet", 12, "Read,Grep,Glob,WebFetch,WebSearch,Write"),
-    "aw-builder": ("gpt-5.6-terra", "medium", "sonnet", 24, "Read,Grep,Glob,Bash,Edit,Write"),
-    "aw-refuter": ("gpt-5.6-sol", "high", "opus", 16, "Read,Grep,Glob,Bash,Write"),
-    "aw-debugger": ("gpt-5.6-sol", "high", "opus", 16, "Read,Grep,Glob,Bash,Write"),
+ROLES = {  # role: (tier, effort, turns, tools); models.json maps tiers to models
+    "aw-scout": ("light", "low", 8, "Read,Grep,Glob,Write"),
+    "aw-researcher": ("standard", "medium", 12, "Read,Grep,Glob,WebFetch,WebSearch,Write"),
+    "aw-builder": ("standard", "medium", 24, "Read,Grep,Glob,Bash,Edit,Write"),
+    "aw-refuter": ("deep", "high", 16, "Read,Grep,Glob,Bash,Write"),
+    "aw-debugger": ("deep", "high", 16, "Read,Grep,Glob,Bash,Write"),
+    "aw-product-owner": ("standard", "medium", 12, "Read,Grep,Glob,Bash,Write"),
+    "aw-qa": ("standard", "medium", 20, "Read,Grep,Glob,Bash,Write"),
+    "aw-router": ("standard", "medium", 10, "Read,Grep,Glob,Bash,Write"),
+    "aw-arbiter": ("deep", "high", 8, "Read,Grep,Glob,Write"),
+    "aw-planner": ("planner", "high", 20, "Read,Grep,Glob,Bash,Write"),
 }
 AGENTS = Path(__file__).resolve().parents[1] / "agents"
+MODELS = Path(__file__).resolve().parents[1] / "models.json"
 INVENTORY_TIMEOUT = 15
 
 
@@ -65,18 +71,27 @@ def prompt(instructions, brief):
     return instructions + "\n\nCoordinator context brief:\n" + brief
 
 
+def model(role, client):
+    tier = ROLES[role][0]
+    try:
+        return json.loads(MODELS.read_text())["tiers"][tier][client]
+    except KeyError:
+        raise RuntimeError(f"models.json has no {client} model for tier {tier!r} (role {role})") from None
+
+
 def codex_command(role, project, servers):
-    model, effort, _, _, _ = ROLES[role]
-    command = ["codex", "exec", "--strict-config", "--cd", str(project), "--model", model, "--config", f'model_reasoning_effort="{effort}"', "--config", "model_auto_compact_token_limit=200000", "--config", 'model_auto_compact_token_limit_scope="total"', "--config", "features.plugins=false", "--config", "features.apps=false", "--config", "features.memory_tool=false", "--config", "agents.enabled=false", "--config", "skills.include_instructions=false", "--json"]
+    _, effort, _, _ = ROLES[role]
+    command = ["codex", "exec", "--strict-config", "--cd", str(project), "--model", model(role, "codex"), "--config", f'model_reasoning_effort="{effort}"', "--config", "model_auto_compact_token_limit=200000", "--config", 'model_auto_compact_token_limit_scope="total"', "--config", "features.plugins=false", "--config", "features.apps=false", "--config", "features.memory_tool=false", "--config", "agents.enabled=false", "--config", "skills.include_instructions=false", "--json"]
     for server in servers:
         command.extend(["--config", f"mcp_servers.{server}.enabled=false"])
     return command
 
 
 def claude_command(role, instructions, settings, mcp_config):
-    _, effort, model, turns, tools = ROLES[role]
-    agent = {role: {"description": "bounded worker", "prompt": instructions, "tools": tools.split(","), "disallowedTools": ["Agent", "Skill"], "model": model, "effort": effort, "maxTurns": turns}}
-    return ["claude", "--print", "--model", model, "--effort", effort, "--autocompact", "200000", "--max-turns", str(turns), "--output-format", "json", "--agents", json.dumps(agent), "--agent", role, "--settings", str(settings), "--mcp-config", str(mcp_config), "--strict-mcp-config", "--disable-slash-commands", "--tools", tools]
+    _, effort, turns, tools = ROLES[role]
+    name = model(role, "claude")
+    agent = {role: {"description": "bounded worker", "prompt": instructions, "tools": tools.split(","), "disallowedTools": ["Agent", "Skill"], "model": name, "effort": effort, "maxTurns": turns}}
+    return ["claude", "--print", "--model", name, "--effort", effort, "--autocompact", "200000", "--max-turns", str(turns), "--output-format", "json", "--agents", json.dumps(agent), "--agent", role, "--settings", str(settings), "--mcp-config", str(mcp_config), "--strict-mcp-config", "--disable-slash-commands", "--tools", tools]
 
 
 def display_command(command):

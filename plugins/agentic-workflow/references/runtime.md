@@ -120,6 +120,8 @@ a promise to restore another client's hidden context or running processes.
 Repair and review counters are telemetry only. There is no attempt cap or automatic
 escalation, including for old saved graphs containing `max_repairs` or
 `max_review_attempts`; those fields are ignored. No budget extension is required.
+Review rounds are bounded by the [review gate](review.md#review-ledger-and-gate),
+which reads the review ledger, not these counters.
 A run previously at `escalate` can record its diagnosis with `replan` and continue.
 Counters, findings and review requirements remain intact. Alternatively carry the
 state into the normal progress-note workflow without deleting the original record.

@@ -1,0 +1,17 @@
+{
+  "repo": "acme/shop",
+  "project": {"owner": "acme", "number": 1, "status_field": "Status"},
+  "states": {"backlog": "Backlog", "ready": "Ready", "in_progress": "In progress",
+             "in_review": "In review", "blocked": "Blocked", "done": "Done"},
+  "items": {"label": "roadmap", "exclude_labels": ["epic"], "startable_states": ["ready"]},
+  "bullets": {"label": "tracer-bullet", "pattern": "^\\d+\\. `(?P<id>[^`]+)` — (?P<text>.+)$",
+              "issue_type": "Task"},
+  "authority": "ROADMAP.md",
+  "order": {"file": "ROADMAP.md", "start": "### Next up", "end": "### ",
+            "id_pattern": "\\b[A-Z]\\d+\\.\\d+\\b"},
+  "assignee": "@me",
+  "found": {"label": "found", "issue_type": "Bug",
+            "priorities": {"urgent": "priority:urgent", "soon": "priority:soon", "later": "priority:later"}},
+  "merge": {"allowed": false, "method": "rebase"},
+  "notes": ["Branch names: feat/<card id>-<slug>."]
+}

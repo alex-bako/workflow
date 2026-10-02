@@ -73,9 +73,9 @@ Run deterministic checks before model review, batch valid fixes, and rereview
 affected behavior. Reuse still-valid coverage with a recorded rationale. Diagnose
 repeated failures and change approach; no repair count requires user escalation.
 
-Prefer one frontier planning pass, not duplicate PRD/roadmap generation by both
-providers. Routine well-specified execution may use a mid-tier coordinator;
-reserve frontier effort for material architecture, ambiguous failures and high-risk
-judgment. This is a recommendation, not an automatic change to the user's model
-or acceptance requirements. Measure accepted slices and total usage, including
-retries, retrieval and memory extraction; terse prose alone cannot guarantee savings.
+Prefer one planning pass, not duplicate PRD/roadmap generation by both providers.
+The coordinator runs on its [tier](subagents.md#model-tiers); reserve high effort
+for material architecture, ambiguous failures and high-risk judgment. This is a
+recommendation, not an automatic change to acceptance requirements. Measure
+accepted slices and total usage, including retries, retrieval and memory
+extraction; terse prose alone cannot guarantee savings.

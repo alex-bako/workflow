@@ -1,0 +1,193 @@
+{
+ "item": "S2.1.T1",
+ "rounds": [
+  {
+   "round": 1,
+   "stage": "local",
+   "snapshot": "wt:19c4b7d",
+   "reviewers": [
+    {
+     "name": "claude",
+     "status": "complete"
+    },
+    {
+     "name": "codex",
+     "status": "complete"
+    }
+   ],
+   "findings": [
+    {
+     "id": "R1-C1",
+     "reviewer": "claude",
+     "severity": "P1",
+     "location": "src/duration.mjs:6-7",
+     "claim": "parseDuration accepts a repeated unit: \"1h1h\" returns 7200 instead of throwing.",
+     "evidence": "Acceptance: \"Units may appear once each, in the order d, h, m, s; anything else throws `RangeError`, including `\"\"` and `\"5\"`.\" `node -e 'import(\"./src/duration.mjs\").then(m => console.log(m.parseDuration(\"1h1h\")))'` prints 7200.",
+     "class": "actionable",
+     "disposition": "repaired",
+     "answer": "",
+     "repeats": null
+    }
+   ]
+  },
+  {
+   "round": 2,
+   "stage": "local",
+   "snapshot": "wt:5e0a3c1",
+   "reviewers": [
+    {
+     "name": "claude",
+     "status": "complete"
+    },
+    {
+     "name": "codex",
+     "status": "complete"
+    }
+   ],
+   "findings": [
+    {
+     "id": "R2-X1",
+     "reviewer": "codex",
+     "severity": "P1",
+     "location": "src/duration.mjs:6",
+     "claim": "parseDuration accepts a bare number: \"5\" returns 5 instead of throwing.",
+     "evidence": "Acceptance: \"Units may appear once each, in the order d, h, m, s; anything else throws `RangeError`, including `\"\"` and `\"5\"`.\" `node -e 'import(\"./src/duration.mjs\").then(m => console.log(m.parseDuration(\"5\")))'` prints 5.",
+     "class": "actionable",
+     "disposition": "repaired",
+     "answer": "",
+     "repeats": null
+    }
+   ]
+  },
+  {
+   "round": 3,
+   "stage": "local",
+   "snapshot": "wt:a8d61f4",
+   "reviewers": [
+    {
+     "name": "claude",
+     "status": "complete"
+    },
+    {
+     "name": "codex",
+     "status": "complete"
+    }
+   ],
+   "findings": [
+    {
+     "id": "R3-C1",
+     "reviewer": "claude",
+     "severity": "P2",
+     "location": "src/duration.mjs:9-13",
+     "claim": "parseDuration accepts units out of order: \"30m1h\" returns 5400 instead of throwing.",
+     "evidence": "Acceptance: \"Units may appear once each, in the order d, h, m, s; anything else throws `RangeError`, including `\"\"` and `\"5\"`.\" `node -e 'import(\"./src/duration.mjs\").then(m => console.log(m.parseDuration(\"30m1h\")))'` prints 5400.",
+     "class": "actionable",
+     "disposition": "repaired",
+     "answer": "",
+     "repeats": null
+    },
+    {
+     "id": "R3-X1",
+     "reviewer": "codex",
+     "severity": "P1",
+     "location": "src/duration.mjs:15-24",
+     "claim": "formatDuration(0) returns an empty string.",
+     "evidence": "Acceptance: \"`formatDuration(5400)` → `\"1h30m\"`; zero units are omitted; `formatDuration(0)` → `\"0s\"`.\" `node -e 'import(\"./src/duration.mjs\").then(m => console.log(JSON.stringify(m.formatDuration(0))))'` prints \"\".",
+     "class": "actionable",
+     "disposition": "repaired",
+     "answer": "",
+     "repeats": null
+    }
+   ]
+  },
+  {
+   "round": 4,
+   "stage": "local",
+   "snapshot": "wt:d3b2e95",
+   "reviewers": [
+    {
+     "name": "claude",
+     "status": "complete"
+    },
+    {
+     "name": "codex",
+     "status": "complete"
+    }
+   ],
+   "findings": [
+    {
+     "id": "R4-C1",
+     "reviewer": "claude",
+     "severity": "P1",
+     "location": "src/clock.mjs:4-6",
+     "claim": "addSeconds adds the seconds as milliseconds.",
+     "evidence": "`node -e 'import(\"./src/clock.mjs\").then(m => console.log(m.addSeconds(new Date(0), 60).toISOString()))'` prints 1970-01-01T00:00:00.060Z; expected 1970-01-01T00:01:00.000Z. Line 5: `return new Date(date.getTime() + seconds);` never multiplies by 1000.",
+     "class": "actionable",
+     "disposition": "open",
+     "answer": "",
+     "repeats": null
+    },
+    {
+     "id": "R4-X1",
+     "reviewer": "codex",
+     "severity": "P2",
+     "location": "src/duration.mjs:19-23",
+     "claim": "formatDuration's loop should be a reduce; the mutable rest is error-prone.",
+     "evidence": "Readability; a later edit could forget to update rest.",
+     "class": "actionable",
+     "disposition": "open",
+     "answer": "",
+     "repeats": null
+    },
+    {
+     "id": "R4-X2",
+     "reviewer": "codex",
+     "severity": "P3",
+     "location": "src/clock.mjs:4-6",
+     "claim": "Consider a test that addSeconds keeps wall-clock time across a DST change.",
+     "evidence": "No test covers src/clock.mjs.",
+     "class": "advisory",
+     "disposition": "open",
+     "answer": "",
+     "repeats": null
+    }
+   ]
+  }
+ ],
+ "gates": [
+  {
+   "after_round": 1,
+   "verdict": "repair",
+   "repair": [
+    "R1-C1"
+   ],
+   "reclassified": [],
+   "repeats": [],
+   "found_work": [],
+   "reason": "R1-C1 demonstrated against an acceptance line; local round 1 of 1."
+  },
+  {
+   "after_round": 2,
+   "verdict": "repair",
+   "repair": [
+    "R2-X1"
+   ],
+   "reclassified": [],
+   "repeats": [],
+   "found_work": [],
+   "reason": "R2-X1 demonstrated against an acceptance line; local round 2 of 2."
+  },
+  {
+   "after_round": 3,
+   "verdict": "replan",
+   "repair": [
+    "R3-C1",
+    "R3-X1"
+   ],
+   "reclassified": [],
+   "repeats": [],
+   "found_work": [],
+   "reason": "Third local round still raised demonstrated acceptance violations; replan the parser and formatter against the acceptance lines."
+  }
+ ]
+}

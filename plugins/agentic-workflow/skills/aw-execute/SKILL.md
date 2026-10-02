@@ -16,15 +16,19 @@ no graph or worker-launch script is required.
    sources, acceptance criteria, and model/effort. Keep one coordinator as state
    writer. Workers are not alone: preserve others' changes and coordinate shared
    contracts. Avoid nested delegation. If tools lack subagents, work sequentially
-   and disclose the limitation; do not claim independent review.
+   and disclose the limitation; do not claim independent review. Builder briefs
+   carry the plan's scope fence under Exclusions; a builder needing work outside it
+   returns `blocked` with one question and does not build it.
 3. Implement a vertical path and meaningful behavior checks. Use a failing check
    first when practical, then the smallest correct fix. Test relevant failure and
    authorization paths. Reuse project test tooling; do not add a framework for
    this workflow. Run targeted checks while iterating and required checks before
    completion. Preserve exact commands, exit status and log paths.
-4. In repair mode, act only on findings adjudicated actionable or new demonstrated
-   breakage. Fix the root cause across affected callers. Keep advisory/refactoring
-   work outside the repair unless necessary for correctness. Record each finding's
+4. In repair mode, act only on the finding IDs the
+   [review gate](../../references/review.md#review-ledger-and-gate) lists for repair,
+   QA findings, or new demonstrated breakage. Fix the root cause across affected
+   callers. Keep advisory/refactoring work outside the repair unless necessary for
+   correctness. Record each finding's
    disposition and evidence; do not silently drop unresolved findings.
 5. Freeze edits while independent reviewers inspect a snapshot. Hand off a small
    brief: slice, accepted contracts/domain terms, base/head/snapshot, changed areas,
@@ -36,7 +40,8 @@ no graph or worker-launch script is required.
 
 Report what changed and what evidence supports it. Continue through the authorized
 work; otherwise stop at the requested boundary. Return failed approaches and new
-evidence to the coordinator, which owns recovery without a repair-attempt cap.
+evidence to the coordinator, which owns recovery without a repair-attempt cap;
+review rounds are bounded only by the [review gate](../../references/review.md#review-ledger-and-gate).
 
 Before committing or pushing, follow [delivery policy](../../references/delivery.md).
 Keep review repairs in their original tracer-bullet commit. Default to uncommitted

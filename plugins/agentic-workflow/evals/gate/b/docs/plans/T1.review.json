@@ -1,0 +1,136 @@
+{
+ "item": "S2.1.T1",
+ "rounds": [
+  {
+   "round": 1,
+   "stage": "local",
+   "snapshot": "wt:51b07e2",
+   "reviewers": [
+    {
+     "name": "claude",
+     "status": "complete"
+    },
+    {
+     "name": "codex",
+     "status": "complete"
+    }
+   ],
+   "findings": [
+    {
+     "id": "R1-C1",
+     "reviewer": "claude",
+     "severity": "P1",
+     "location": "src/duration.mjs:6-7",
+     "claim": "parseDuration accepts a repeated unit: \"1h1h\" returns 7200 instead of throwing.",
+     "evidence": "Acceptance: \"Units may appear once each, in the order d, h, m, s; anything else throws `RangeError`, including `\"\"` and `\"5\"`.\" `node -e 'import(\"./src/duration.mjs\").then(m => console.log(m.parseDuration(\"1h1h\")))'` prints 7200.",
+     "class": "actionable",
+     "disposition": "repaired",
+     "answer": "",
+     "repeats": null
+    },
+    {
+     "id": "R1-X1",
+     "reviewer": "codex",
+     "severity": "P3",
+     "location": "test/duration.test.mjs:11-13",
+     "claim": "The malformed inputs could be split into one test per input.",
+     "evidence": "Style; the loop asserts each input.",
+     "class": "advisory",
+     "disposition": "answered",
+     "answer": "Kept: one loop over the acceptance inputs.",
+     "repeats": null
+    }
+   ]
+  },
+  {
+   "round": 2,
+   "stage": "local",
+   "snapshot": "wt:c4e9d13",
+   "reviewers": [
+    {
+     "name": "claude",
+     "status": "complete"
+    },
+    {
+     "name": "codex",
+     "status": "complete"
+    }
+   ],
+   "findings": [
+    {
+     "id": "R2-C1",
+     "reviewer": "claude",
+     "severity": "P3",
+     "location": "src/duration.mjs:15-23",
+     "claim": "formatDuration(0) returns an empty string.",
+     "evidence": "Acceptance: \"`formatDuration(5400)` → `\"1h30m\"`; zero units are omitted; `formatDuration(0)` → `\"0s\"`.\" `node -e 'import(\"./src/duration.mjs\").then(m => console.log(JSON.stringify(m.formatDuration(0))))'` prints \"\". formatDuration has no zero case: for 0 the loop pushes no part and line 23 joins an empty list.",
+     "class": "actionable",
+     "disposition": "open",
+     "answer": "",
+     "repeats": null
+    },
+    {
+     "id": "R2-C2",
+     "reviewer": "claude",
+     "severity": "P2",
+     "location": "src/duration.mjs:7",
+     "claim": "The RangeError message could name the expected format, for example \"expected 1h30m\".",
+     "evidence": "Wording; the error type matches the acceptance line.",
+     "class": "advisory",
+     "disposition": "open",
+     "answer": "",
+     "repeats": null
+    },
+    {
+     "id": "R2-X1",
+     "reviewer": "codex",
+     "severity": "P1",
+     "location": "src/duration.mjs:2",
+     "claim": "UNITS should move to a shared constants module; T2 and T3 will need the same table.",
+     "evidence": "The table is defined locally on line 2; the reminder schedule will duplicate it.",
+     "class": "actionable",
+     "disposition": "open",
+     "answer": "",
+     "repeats": null
+    },
+    {
+     "id": "R2-X2",
+     "reviewer": "codex",
+     "severity": "P2",
+     "location": "src/duration.mjs:9-11",
+     "claim": "Prefer for...of over forEach with an index in parseDuration.",
+     "evidence": "Style.",
+     "class": "advisory",
+     "disposition": "open",
+     "answer": "",
+     "repeats": null
+    },
+    {
+     "id": "R2-X3",
+     "reviewer": "codex",
+     "severity": "P1",
+     "location": "src/duration.mjs:10",
+     "claim": "parseDuration converts with parseFloat, so \"0.5s\" parses to 0.5 seconds.",
+     "evidence": "Invariant: \"A duration is an integer number of seconds; no fractional values.\" Line 10: `seconds += parseFloat(match[i + 1]) * size;`",
+     "class": "actionable",
+     "disposition": "open",
+     "answer": "",
+     "repeats": null
+    }
+   ]
+  }
+ ],
+ "gates": [
+  {
+   "after_round": 1,
+   "verdict": "repair",
+   "repair": [
+    "R1-C1"
+   ],
+   "reclassified": [],
+   "repeats": [],
+   "found_work": [],
+   "reason": "R1-C1 demonstrated by a failing command against an acceptance line; local round 1 of 1."
+  }
+ ]
+}

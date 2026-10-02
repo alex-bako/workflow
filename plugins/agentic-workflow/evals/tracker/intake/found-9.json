@@ -1,0 +1,4 @@
+{"number": 9, "title": "Storage test 'saves and reloads an item' fails intermittently",
+ "state": "OPEN", "status": "Ready", "labels": ["found", "priority:later"], "assignees": [],
+ "blocked_by": [], "parent": null, "milestone": null, "open_prs": [], "comments": [], "type": "Bug",
+ "body": "## Summary\nThe storage test 'saves and reloads an item' failed once on a local run.\n\n## Found in\nLocal run on a feature branch, 2026-09-18.\n\n## Evidence\nOne failure, not reproduced.\n\n## Acceptance\n- The test passes 50 consecutive runs of `node --test test/storage.test.mjs`.\n\n## Priority\nlater: seen once, not on main.\n"}

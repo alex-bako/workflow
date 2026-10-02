@@ -1,0 +1,9 @@
+{
+  "tiers": {
+    "light":    {"claude": "haiku",  "codex": "gpt-6-luna"},
+    "standard": {"claude": "sonnet", "codex": "gpt-5.6-terra"},
+    "deep":     {"claude": "opus",   "codex": "gpt-6.1-sol"},
+    "planner":  {"claude": "fable",  "codex": "gpt-6-astra"}
+  },
+  "coordinator": "deep"
+}
