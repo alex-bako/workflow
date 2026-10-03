@@ -12,13 +12,16 @@ for the roadmap index and milestone handoff documents.
 
 1. Define milestones by user-observable outcomes. Each tracer bullet exercises a
    complete path through the layers it needs, including verification. Avoid
-   horizontal milestones such as “all tables, then all APIs, then all UI.”
+   horizontal milestones such as “all tables, then all APIs, then all UI.” A wide
+   mechanical change is its own prefactor bullet or an expand, migrate, contract
+   sequence ([output contract](../../references/planning.md#output-contract)).
 2. For each stable slice ID record: outcome, requirement/term IDs, dependencies,
    repository ownership, important contracts, acceptance examples and checks,
    exclusions, risks, and the sources to read first. Keep dependency relationships
    explicit and acyclic. Identify the earliest useful executable slice.
 3. Resolve decisions that affect several slices before scheduling dependent work.
-   Ask one guided question at a time if the decision needs product/domain input.
+   [Grill](../../references/grilling.md) the user when the decision needs
+   product/domain input; record each card's `Decisions:` and `Open decisions:`.
    Separate exploration spikes from shippable slices and give spikes exit evidence.
 4. Distinguish shipped/current behavior from intended behavior. Keep historical
    plans labeled as historical; maintain one current execution index. Update graph
@@ -28,8 +31,9 @@ for the roadmap index and milestone handoff documents.
    must contain its outcome, entry dependencies, exit gate, scope/non-goals and
    vertical bullet specifications with requirement/domain references, acceptance
    and verification approach. Preserve completed work and current source authority.
-6. Challenge slicing and dependencies with a bounded independent perspective when
-   requested/available. Do not rewrite all accepted scope during every review.
+6. Run the slicing review with the user as one grilling round: granularity,
+   dependency edges, bullets to merge or split. Challenge slicing and dependencies
+   with a bounded independent perspective when requested/available. Do not rewrite all accepted scope during every review.
 
 Exit: each milestone has coherent value, slices have testable acceptance, blocked
 dependencies are visible, and all in-scope requirements are covered or explicitly

@@ -27,10 +27,11 @@ Output contract. Besides the allowed edits and `/logs/agent/build/`, write only:
 {
   "status": "complete | partial | blocked",
   "changed_files": ["path relative to /app"],
+  "red": [{"command": "exact command", "exit": 1, "assertion": "the failing assertion"}],
   "checks": [{"command": "exact command", "exit": 0, "result": "its actual result"}],
   "questions": ["one question for the coordinator, with your recommendation"],
   "notes": "limitations and unverified items"
 }
 ```
 
-Use `[]` for empty lists.
+`red` holds the runs before your change; `checks` holds the final runs. Use `[]` for empty lists.

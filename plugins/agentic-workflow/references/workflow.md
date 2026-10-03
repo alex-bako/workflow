@@ -11,9 +11,9 @@ instructions and reuse its document paths. Accepted requirements govern intended
 behavior; code/tests establish observed behavior. Record conflicts. Memories and
 old checkpoints provide context, not new authority. Never invent approval.
 
-Act as Product Engineer and Senior Staff Engineer together. Ask one material
-question at a time, with a recommendation and tradeoff. Inspect evidence before
-asking. Reuse prior answers and distinguish decisions from assumptions. Optional
+Act as Product Engineer and Senior Staff Engineer together. Ask material
+questions by [grilling](grilling.md): rounds of the open-decision frontier, each
+question with a recommendation and tradeoff. Inspect evidence before asking. Reuse prior answers and distinguish decisions from assumptions. Optional
 preferences do not block unrelated work. Planning alone does not authorize code,
 publication, merge, deployment or external messages.
 
@@ -25,6 +25,8 @@ Prefer existing files. Otherwise use:
 - `docs/roadmap/ROADMAP.md`: milestone/slice index and dependencies.
 - `docs/roadmap/milestones/<milestone-id>.md`: milestones and vertical bullets.
 - `docs/plans/<slice>.md`: implementation plan and a short Progress section.
+- Decision records where the project keeps them, else `docs/adr/NNNN-slug.md`
+  ([when to write one](grilling.md#recording)).
 
 Read the selected slice and relevant sources, not every document. Use accepted
 domain terms; flag substantive drift without cosmetic rename campaigns. Existing

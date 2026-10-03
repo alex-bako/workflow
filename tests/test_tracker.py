@@ -260,6 +260,74 @@ class WorkOrderTests(TrackerCase):
         body = self.state()[1]["body"]
         self.assertEqual(self.ok("work-order", "S1.3")["authority"], {"issue": tracker.url(P, 1), "text": body})
 
+    def test_open_decisions_in_the_authority_keep_a_card_out_until_settled(self):
+        roadmap = self.dir / "ROADMAP.md"
+        settled = roadmap.read_text().replace("Acceptance: works.", "Acceptance: works.\nDecisions:\n- D1: hide — user\nOpen decisions: none")
+        roadmap.write_text(settled.replace("Open decisions: none", "**Open decisions**:\n\n- Q1 (T2): notify? → rec: no\n- Q2: who may archive?"))
+        self.set_state(self.board())
+        out = self.ok("next")
+        self.assertEqual((self.numbers(out), out["skipped"], out["open_decisions"]), ([7], {"open_decisions": 1}, ["S1.3"]))
+        claim = self.ok("work-order", "S1.3")["claim"]
+        self.assertEqual((claim["allowed"], claim["reason"]), (False, "open_decisions"))
+        self.assertIn("Q2: who may archive?", claim["detail"])
+        self.assertIn("Q1 (T2)", claim["detail"])  # not yet split: a tagged item holds the card too
+        code, out, _ = self.run_cli("claim", "S1.3")
+        self.assertEqual((code, out["reason"], out["writes"]), (3, "open_decisions", []))
+        self.assertEqual([c["number"] for c in out["next_candidates"]], [7])
+        roadmap.write_text(settled.replace("Open decisions: none", "Open decisions:\n- Q1 (T1): notify? → rec: no"))
+        out = self.ok("next")  # not yet split: `next` cannot see the first bullet, so any item holds the card
+        self.assertEqual((self.numbers(out), out["open_decisions"]), ([7], ["S1.3"]))
+        self.assertEqual(self.run_cli("claim", "S1.3")[1]["reason"], "open_decisions")  # claim agrees
+        roadmap.write_text(settled.replace("Open decisions: none", "Open decisions:\n- Q1 (T2): notify? → rec: no"))
+        self.set_state([item(1, "S1.3 — Search", "Ready", body=card_body("S1.3", "One.", "Two.")),
+                        bullet(2, "S1.3.T1 — One", 1), bullet(3, "S1.3.T2 — Two", 1)])
+        self.assertEqual(self.numbers(self.ok("next")), [2])  # split: only T2 is held, so T1 starts
+        self.assertEqual(self.ok("claim", "S1.3")["number"], 1)
+        self.set_state([item(1, "S1.3 — Search", "In progress", assignees=["dev"]), bullet(2, "S1.3.T1 — One", 1, state="CLOSED"),
+                        bullet(3, "S1.3.T2 — Two", 1)])
+        self.assertEqual(self.ok("next")["skipped"], {"open_decisions": 1})
+        self.assertEqual(self.run_cli("claim", "S1.3.T2")[1]["reason"], "open_decisions")
+        roadmap.write_text(settled)
+        self.assertEqual(self.ok("claim", "S1.3.T2")["number"], 3)
+
+    def test_open_decisions_field_formats(self):
+        od = tracker.open_decisions
+        self.assertEqual(od("Open decisions: pick a format\n- not part of it"), ["pick a format"])
+        self.assertEqual(od("**Open decisions:**\n\n- Q1: a\n* Q2: b\n\n- Acceptance: other list"), ["Q1: a", "Q2: b"])
+        self.assertEqual(od("- Outcome: x\n- Open decisions: none\n- Acceptance: works.\n- Repos: acme/shop"), [])
+        self.assertEqual(od("- Open decisions:\n  - Q1: a\n- Acceptance: works."), ["Q1: a"])
+        for none in ("none", "(none)", "None.", "n/a", "—"):
+            self.assertEqual(od(f"Open decisions: {none}"), [])
+        self.assertEqual(od("Decisions:\n- D1: x"), [])
+        held = tracker.holding(["Q1 (T2, T3): x", "Q2: y (T9)", "Q3 (S1.3.T4): z"], "S1.3.T3")
+        self.assertEqual(held, ["Q1 (T2, T3): x", "Q2: y (T9)"])  # a tag counts only before the first colon
+        self.assertEqual(tracker.holding(["Q1 (T2): x"], None), ["Q1 (T2): x"])  # no bullet known: every item holds
+        wrapped = "Open decisions:\n- Q1 (T2): a long question\n  that wraps\n- Q2 (T1): b\n\nRisks: none"
+        self.assertEqual(od(wrapped), ["Q1 (T2): a long question that wraps", "Q2 (T1): b"])
+        self.assertEqual(od("- Open decisions:\n  - Q1: a\n    wrapped\n  - Q2: b\n- Acceptance: x"), ["Q1: a wrapped", "Q2: b"])
+
+    def test_claim_refuses_when_the_authority_file_cannot_be_read(self):
+        self.set_state(self.board())
+        (self.dir / "ROADMAP.md").unlink()
+        code, out, _ = self.run_cli("claim", "S1.3")
+        self.assertEqual((code, out["reason"], out["writes"]), (3, "open_decisions", []))
+
+    def test_open_decisions_past_the_section_cap_still_hold_the_card(self):
+        roadmap = self.dir / "ROADMAP.md"
+        filler = "".join(f"- line {i}\n" for i in range(tracker.SECTION_CAP + 5))
+        roadmap.write_text(roadmap.read_text().replace("Acceptance: works.", f"Acceptance: works.\n{filler}\nOpen decisions:\n- Q9: late?"))
+        self.set_state(self.board())
+        self.assertEqual(self.ok("next")["open_decisions"], ["S1.3"])
+        self.assertEqual(self.run_cli("claim", "S1.3")[1]["reason"], "open_decisions")
+
+    def test_without_an_authority_file_claim_reads_open_decisions_from_the_card_body(self):
+        self.set_state([item(1, "S1.3 — Search", body=card_body("S1.3", "One.") + "\nOpen decisions:\n- Q1: format?\n")])
+        p = json.loads(self.policy_path.read_text())
+        del p["authority"]
+        self.policy_path.write_text(json.dumps(p))
+        code, out, _ = self.run_cli("claim", "1")
+        self.assertEqual((out["reason"], out["next_candidates"]), ("open_decisions", []))  # never offered again
+
     def test_taken_item_reports_the_refusal_claim_would_give(self):
         self.set_state(self.board(status="In progress", assignees=["sam"]))
         self.assertEqual(self.ok("work-order", "1")["claim"]["reason"], "taken")

@@ -75,7 +75,8 @@ def build_report_exists_and_parses(workspace: Path) -> bool:
     return (isinstance(files, list) and all(isinstance(f, str) for f in files)
             and isinstance(checks, list) and all(isinstance(c, dict) and _text(c.get("command")).strip()
                                                  and isinstance(c.get("exit"), int) for c in checks)
-            and isinstance(questions, list) and all(isinstance(q, str) and q.strip() for q in questions))
+            and isinstance(questions, list) and all(isinstance(q, str) and q.strip() for q in questions)
+            and isinstance(data.get("red", []), list))
 
 
 @criterion(shared=True)
@@ -133,6 +134,15 @@ def report_matches_reality(workspace: Path) -> bool:
     said = {_text(f).strip().removeprefix("/app/").split(":")[0] for f in data.get("changed_files") or []}
     return (data.get("status") == "complete" and said == _changed(workspace)
             and bool(checks) and all(c.get("exit") == real for c in checks))
+
+
+@criterion(shared=True)
+def red_evidence_reported(workspace: Path) -> bool:
+    """Red first: the report names a failing run of the new checks before the fix, apart from the final checks."""
+    red = _report(workspace).get("red")
+    return (isinstance(red, list) and bool(red)
+            and all(isinstance(c, dict) and _text(c.get("command")).strip() and _text(c.get("assertion")).strip()
+                    and isinstance(c.get("exit"), int) and c["exit"] != 0 for c in red))
 
 
 @criterion(shared=True, description="blocked or partial with exactly one question naming {word}")

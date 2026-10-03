@@ -87,11 +87,11 @@ repeated command is safe. Agents never hand-write tracker queries.
 | Command | Effect |
 | --- | --- |
 | `init [--repo OWNER/NAME] [--project OWNER/NUMBER] [--out PATH]` | Read-only on the tracker. Draft a policy for a repository that has none and write it to PATH (default: the `--policy` path). Refuse `exists` when the file exists, `ambiguous` (listing the `choices`) when the repository has several open boards and none is named, `no_board` when it has none. A board without a single-select Status field is a usage error. Output: `policy` (the path), `detected` and `missing`. See [first use](#first-use). |
-| `next [--limit N]` | Read-only. `candidates` (default 3, at least 1) in order, each card or bullet with the `authority` section of its card; `in_flight` (bullets and found issues in progress, in review or blocked, with card, branch and phase from the claim comment); `skipped` counts by reason. |
+| `next [--limit N]` | Read-only. `candidates` (default 3, at least 1) in order, each card or bullet with the `authority` section of its card; `in_flight` (bullets and found issues in progress, in review or blocked, with card, branch and phase from the claim comment); `skipped` counts by reason; `open_decisions`, the ids of cards held by open decisions, when any. |
 | `show N [--body]` | Read-only. Number, id, title, kind, state, status, assignees, labels, parent, blockers, linked pull requests, and the card's bullets in order: each listed in the body, with its sub-issue `number` and status once `bullets` created it (`null` before). |
 | `work-order N` | Read-only. Every fact of the [work order](#steward) for N in one call: `kind`, the card or found `item`, the `bullet` this pass delivers, `siblings_out_of_scope`, the `authority` section verbatim (for a found issue, or any item when the policy has no authority file, the issue body under `issue` and `text`), `repositories`, `dependencies` with state, the last `claimed` branch and phase, `plan_published`, `claim` (the `number` to claim first: the found issue or bullet itself, a started card's current bullet, else the card; `allowed`, else the `reason` `claim` would refuse with), `alternates` with their authority sections, `drift` touching N, `policy_notes`. |
 | `bullets N` | Refuse when card N is taken or blocked. Else create its missing bullet sub-issues from its body: title `<id> — <summary>`, bullet text, card link, empty plan section, the card's milestone, the bullet label; added to the board as backlog. A rerun finishes an interrupted add: a bullet on the board without a status gets backlog. |
-| `claim N [--branch B] [--phase P]` | Re-read N; refuse when taken or blocked, and for a bullet also when its parent card is closed, assigned to someone else or excluded. Else assign, set in progress (and the parent card when N is a bullet), post one claim comment. A repeated claim by the same assignee writes nothing. Branch and phase are single tokens without whitespace or angle brackets. |
+| `claim N [--branch B] [--phase P]` | Re-read N; refuse when taken or blocked, and for a bullet also when its parent card is closed, assigned to someone else or excluded; refuse `open_decisions` when an open decision holds it. Else assign, set in progress (and the parent card when N is a bullet), post one claim comment. A repeated claim by the same assignee writes nothing. Branch and phase are single tokens without whitespace or angle brackets. |
 | `plan N --file F` | Replace the section between `<!-- aw:plan:start -->` and `<!-- aw:plan:end -->` in N's body with F, appending the section when absent. Refuse `too_large` when the resulting body exceeds 65,000 characters; a plan file that itself contains a marker is a usage error. |
 | `set N <state> [--comment T]` | Set the board state; optional single comment. Never closes or reopens. |
 | `file --title T --body-file F --priority P [--found-in N] [--type TYPE] [--new]` | Refuse `similar` (listing the matches) when an open issue has a similar or identical title, unless `--new`. Else create a found issue: title, body from F plus a `Found in #N` line, the found label and the label of rank P, the issue type; added to the board as ready. An open found issue with the same title and the same resulting body is this command run before: it is only completed, `created: false`. |
@@ -119,13 +119,27 @@ in sequence. A card in progress without bullet sub-issues is someone else's work
 and is skipped. Cards and bullets are told apart by label, since a card may itself
 be a sub-issue of an epic. `skipped` reasons: `blocked`, `assigned`, `open_pr`,
 `excluded_label`, `not_startable`, `in_progress_without_bullets`, `bullet_taken`,
-`bullets_done`, `untriaged` (a found issue without exactly one priority label).
+`bullets_done`, `untriaged` (a found issue without exactly one priority label),
+`open_decisions`.
+
+**Open decisions.** A card's `Open decisions:` field (inline text, else the list
+items under it, deeper than the field when the field is itself a list item;
+`none` is none) holds bullets: an item tagged `(T2, T3)` before its first colon
+holds those bullets, an untagged item the whole card; before a card is split into
+bullet sub-issues its first bullet is unknown, so any item holds it. The gate
+reads the whole authority section, not the capped text `next` prints. A held
+bullet is not handed out and a held card does not start, whatever its state: its planner would only
+stop to ask. `next` lists the held card ids under `open_decisions`; `aw-plan
+ahead` settles them with the user. Without an authority file `next` cannot see
+card bodies, so only `claim` checks the card body.
 
 ### Refusals
 
 `taken`: closed; in review or done; assigned to anyone but the policy assignee; or
 in progress without being assigned to the policy assignee. `blocked`: an open
-blocker, or an earlier bullet of the same card still open. `not_a_card`,
+blocker, or an earlier bullet of the same card still open. `open_decisions`: an
+open decision holds the bullet (for a card, its first open bullet), listed in
+`detail`. A refused `claim` never offers the refused item in `next_candidates`. `not_a_card`,
 `no_bullets` (pattern matched nothing), `too_large`, `similar`, `not_found`. A
 refusal writes nothing. Titles are similar when the words of three or more letters
 they share, compared without case, number at least half the average word count of

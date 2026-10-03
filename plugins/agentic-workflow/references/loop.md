@@ -19,10 +19,17 @@ branch, publishing its pull request, replying on that pull request, and merge on
 when the policy sets `merge.allowed`. Nothing here authorizes deployment, changes
 to the authority file's scope, or work on another bullet.
 
-Ask the user only for an **open question**: a decision the authority file, the
-card, accepted plans, project instructions and the code do not settle. Ask one question with a recommendation, set the bullet
-to blocked with the question in its comment, and wait. Everything else is the
-coordinator's call. Record each call and its source in the plan's Progress section.
+Ask the user only for an **open question**: a decision the authority file (its
+`Decisions:` items included), accepted decision records, accepted plans, project
+instructions and the code do not settle. Ask every open question of the bullet
+together as one [grilling](grilling.md#asking-a-round) round, numbered, each with
+a recommendation; set the bullet to blocked with the round in its comment, and
+wait. Never answer a decision on the user's behalf. Everything else is the
+coordinator's call. Record each call and its source in the plan's Decisions. A
+call that would qualify as a decision record is proposed in the stage 11 report,
+not written. Questions are cheaper before the loop: `aw-plan ahead` settles a
+card's decisions with the user, and the tracker does not hand out a bullet or card
+held by an open decision.
 
 ## Scope fence
 
@@ -55,15 +62,25 @@ and enforced at every later stage.
 2. **Pick.** The same `next` result serves stages 1 and 2. Steward `claim`: for a
    new card it claims the card, creates the bullet sub-issues, then claims the
    first bullet. The work order is the hand-off to planning. No candidate: stop
-   and report why (counts by reason, drift).
+   and report why (counts by reason, drift); cards skipped for `open_decisions`
+   wait for `aw-plan ahead`.
 3. **Plan.** The coordinator dispatches `aw-planner` with the work order; it
    writes the plan with `aw-plan` and does its own bounded lookups. The plan quotes
-   the acceptance lines verbatim (it is the contract QA and reviewers read), names
-   the scope fence, maps every acceptance line to a check, and lists the QA
-   baselines that apply. The coordinator answers the planner's question from the
-   authority file or raises it as an open question, accepts the plan when the next
-   step can be built without guessing material behavior, or returns it with
-   corrections; there is no user gate unless an open question exists.
+   the acceptance lines verbatim (it is the contract QA and reviewers read), lists
+   the decisions it rests on with their sources, names the scope fence, maps every
+   acceptance line to a check that fails at the base commit, and lists the QA
+   baselines that apply. The coordinator answers the planner's open decisions from
+   the authority file, records and code, or raises the rest as open questions.
+   **Plan review**, when the bullet touches persisted data or migrations, auth or
+   security, a contract across repositories or a decision record, or the plan is
+   a re-plan or came back partial: one `aw-refuter` with target `plan` from the
+   vendor the planner did not use (a Claude-hosted loop runs Codex through
+   `run_worker.py --client codex --role aw-refuter`). The coordinator adjudicates
+   its findings and returns accepted ones as corrections; at most one correction
+   round, then a check of what changed. Without a trigger, record the skip in
+   Progress. The coordinator accepts the plan when no `OPEN` decision remains and
+   every acceptance line has a check, or returns it with corrections; there is no
+   user gate unless an open question exists.
 4. **Publish the plan.** Steward `plan`: the accepted plan goes into the bullet
    issue body. The plan file stays the working copy and holds Progress. Republish
    after any accepted plan change.
@@ -155,7 +172,9 @@ Always, on the frozen snapshot, with evidence for each:
 1. **Project checks.** The repository's own gates: tests, lint, type-check, format
    and project guard scripts, as named by the plan and project instructions.
 2. **Acceptance and plan.** Every acceptance line and every plan step demonstrated
-   by a command, test or observation. New behavior has a test.
+   by a command, test or observation. New behavior has a test that fails without
+   the change: the builder's red evidence names it (QA reruns it green itself),
+   or the plan gives a cannot-be-red reason.
 3. **Scope fence.** Every changed file and hunk maps to a plan step; nothing from a
    sibling bullet; no adjacent refactor.
 4. **Browser and design QA** for UI bullets, as in the [review protocol](review.md#browser-and-design-qa).
