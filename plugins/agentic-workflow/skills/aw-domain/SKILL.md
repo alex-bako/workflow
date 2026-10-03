@@ -10,8 +10,10 @@ examples, and inspect existing code terminology before proposing replacements.
 
 1. Walk through a concrete business scenario with the user. Identify actors,
    intentions/commands, facts/events, objects with identity, meaningful values,
-   and rules. Ask one question at a time where meanings diverge. Prefer domain
-   verbs and nouns to infrastructure words such as manager, handler or record.
+   and rules. [Grill](../../references/grilling.md) where meanings diverge:
+   challenge a conflicting term at once and invent edge cases that force
+   boundaries. Prefer domain verbs and nouns to infrastructure words such as
+   manager, handler or record.
 2. Create a ubiquitous-language table: stable term ID, preferred term, precise
    definition, context, concrete example/counterexample, aliases or discouraged
    ambiguous names. Track proposed/accepted status and the source of acceptance.
@@ -29,7 +31,8 @@ examples, and inspect existing code terminology before proposing replacements.
    factories, event sourcing, CQRS or class hierarchies merely to satisfy DDD.
 6. Write/update the domain document and reconcile PRD terms. Link terms/rules to
    requirements and decisions using `aw-context` when a knowledge graph exists.
-   Preserve existing API names until a deliberate migration is planned.
+   Preserve existing API names until a deliberate migration is planned. Keep
+   decision logs out of the domain document; link the decision records instead.
 
 Exit: key scenarios can be described unambiguously; important rules have examples;
 boundary translations and remaining ambiguities are explicit. Plans, code, tests

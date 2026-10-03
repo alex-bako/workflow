@@ -8,6 +8,10 @@ Brief:
 QA bullet T1. Worktree `/app`, frozen snapshot: the working tree on base `HEAD`.
 Plan `docs/plans/T1.md`; project instructions `AGENTS.md`. No project writes;
 evidence to `/logs/agent/qa/`. Return findings with evidence.
+Builder's red evidence: `node --test` on base `HEAD` with the new tests, exit 1,
+3 of 6 failing: "extracts tags lowercased, in first-seen order, without
+duplicates" (tags `undefined`, expected `['cs', 'books']`), "a line without tags
+has no tags" (`undefined`, expected `[]`), "parses title and url" (no `tags: []`).
 
 Output contract. The only files you may write are the two report files below and
 files under `/logs/agent/qa/`.

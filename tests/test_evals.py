@@ -42,6 +42,27 @@ class HarborTests(unittest.TestCase):
             with self.subTest(error=type(error).__name__), mock.patch("subprocess.run", side_effect=error):
                 self.assertFalse(qa.project_checks_report_actual_node_test_result(Path("/nonexistent")))
 
+    def test_builder_red_evidence_sits_apart_from_the_final_checks(self):
+        stub = types.ModuleType("rewardkit")
+        stub.criterion = lambda **_: (lambda f: f)
+        with mock.patch.dict(sys.modules, {"rewardkit": stub}):
+            build = load("build_rules", HARBOR / "lib/build_rules.py")
+        red = {"command": "node --test", "exit": 1, "assertion": "tags missing"}
+        green = {"command": "node --test", "exit": 0, "result": "pass 4"}
+        report = {"status": "complete", "changed_files": ["src/items.mjs"], "red": [red], "checks": [green]}
+        with tempfile.TemporaryDirectory() as tmp:
+            ws = Path(tmp)
+            for data, ok in ((report, True), ({**report, "red": []}, False),
+                             ({**report, "red": [green]}, False), ({**report, "red": [], "checks": [red, green]}, False),
+                             ({**report, "red": 1}, False), ({**report, "red": [{"command": "false", "exit": 1}]}, False)):
+                (ws / "build-report.json").write_text(json.dumps(data))
+                with self.subTest(data=data):
+                    self.assertEqual(build.red_evidence_reported(ws), ok)
+            (ws / "build-report.json").write_text(json.dumps(report))
+            with mock.patch.object(build, "_node_test", return_value=0), \
+                 mock.patch.object(build, "_changed", return_value={"src/items.mjs"}):
+                self.assertTrue(build.report_matches_reality(ws))
+
 
 class DocTests(unittest.TestCase):
     def test_aw_eval_names_every_harbor_case(self):
@@ -62,6 +83,48 @@ class DocTests(unittest.TestCase):
                 for rule in ("its `authority.text` is the issue body", "any item when the policy has no authority file",
                              "every `in_flight` entry (number, branch, phase)", "one `Repositories:` line"):
                     self.assertIn(rule, flat(rel))
+
+    def test_every_planning_entry_point_grills_in_rounds(self):
+        for rel in ("references/workflow.md", "references/planning.md", "skills/aw-feature/SKILL.md",
+                    "skills/aw-discover/SKILL.md", "skills/aw-domain/SKILL.md", "skills/aw-roadmap/SKILL.md",
+                    "skills/aw-plan/SKILL.md"):
+            with self.subTest(rel):
+                self.assertIn("grilling.md", flat(rel))
+                self.assertNotRegex(flat(rel), r"(?i)one[- ](?:material |guided )?question[- ](?:at a time|per turn)|pending question")
+        grilling = flat("references/grilling.md")
+        for rule in ("frontier", "AskUserQuestion", "up to four", "❓ Q1", "Never answer a decision on the user's behalf",
+                     "hard to reverse, surprising without its context and the result of a real tradeoff",
+                     "The user then confirms", "A non-material choice is the coordinator's call"):
+            self.assertIn(rule, grilling)
+
+    def test_loop_asks_open_decisions_in_one_round_and_gates_cards_with_open_decisions(self):
+        for rel in ("agents/aw-planner.md", "codex-agents/aw-planner.toml"):
+            with self.subTest(rel):
+                self.assertIn("return every open decision whose prerequisites are settled", flat(rel))
+                self.assertIn("why that check fails at the base commit", flat(rel))
+        for rel in ("references/loop.md", "skills/aw-next/SKILL.md"):
+            with self.subTest(rel):
+                self.assertRegex(flat(rel), r"one (?:numbered|\[grilling\]\(grilling\.md#asking-a-round\)) round")
+                self.assertNotIn("Ask one question with a recommendation", flat(rel))
+                self.assertIn("aw-plan ahead", flat(rel))
+        self.assertIn("`aw-plan ahead [N]`", flat("skills/aw-plan/SKILL.md"))
+        self.assertIn("`open_decisions`", flat("references/tracker.md"))
+
+    def test_checks_must_fail_before_the_change_and_risky_plans_get_a_review(self):
+        self.assertIn("why it fails at the base commit", flat("skills/aw-plan/SKILL.md"))
+        for role, rule in (("aw-builder", "report it failing before the fix (command, failing assertion)"),
+                           ("aw-qa", "missing red evidence is a finding"),
+                           ("aw-refuter", "Brief target `plan`")):
+            for rel in (f"agents/{role}.md", f"codex-agents/{role}.toml"):
+                with self.subTest(rel):
+                    self.assertIn(rule, flat(rel))
+        loop = flat("references/loop.md")
+        self.assertIn("the builder's red evidence (failing command and assertion per new check)", flat("skills/aw-next/SKILL.md"))
+        for rule in ("New behavior has a test that fails without the change", "QA reruns it green itself",
+                     "one `aw-refuter` with target `plan`",
+                     "the vendor the planner did not use", "persisted data or migrations, auth or security",
+                     "record the skip in Progress"):
+            self.assertIn(rule, loop)
 
     def test_claude_profile_frontmatter_quotes_values_with_a_colon(self):
         for path in sorted((PLUGIN / "agents").glob("*.md")):

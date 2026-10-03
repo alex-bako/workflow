@@ -19,7 +19,11 @@ below in **Claude Code**. In **Codex**, replace `/agentic-workflow:aw-feature` w
 Just describe your idea. The skill already knows to:
 
 - Act as both a Product Engineer and a Senior Staff Engineer.
-- Ask one material question at a time and reuse your answers.
+- Grill you in rounds: every decision it can ask now, each with a recommended
+  answer and its tradeoff (in Claude Code up to four per prompt, in Codex as a
+  numbered list you answer by number). It looks facts up in your code instead of
+  asking, challenges terms that clash with the domain document and asks you to
+  confirm before it calls planning done.
 - Establish domain vocabulary, examples, business rules and relevant boundaries.
 - Produce the PRD, product roadmap and milestone files, including vertical tracer
   bullets, dependencies and acceptance criteria.
@@ -34,8 +38,22 @@ instructions in your prompt. Existing project documents and naming are reused.
 ```
 
 Replace the ID and file path with yours. This checks current code and dependencies,
-then produces the detailed implementation plan, important contract snippets and
-verification steps. Use it when the selected bullet still needs detailed planning.
+then produces the detailed implementation plan: the decisions it rests on with
+their sources, important contract snippets, and a check for every acceptance line
+with why it fails before the change. Use it when the selected bullet still needs
+detailed planning.
+
+Before handing cards to `aw-next`, settle their open decisions while you are there:
+
+```text
+/agentic-workflow:aw-plan ahead 3
+```
+
+It grills you on the next three cards and writes your answers into each card's
+`Decisions:` lines. Whatever stays open goes under `Open decisions:`, and the
+tracker does not hand out work it holds: an item tagged `(T2)` holds that bullet,
+an untagged one (or any item, before the card is split into bullets) the whole
+card. So the autonomous loop rarely has to stop and ask.
 
 ### 3. Implement a planned card or tracer bullet
 
@@ -97,7 +115,8 @@ accepts the plan, decides on review findings and owns Git.
 | Stage | Agent | What it does |
 | --- | --- | --- |
 | Pick | `aw-product-owner` | Picks and claims the next bullet on the board through the bundled tracker script, and returns a work order |
-| Plan | `aw-planner` | Writes the plan: acceptance lines, scope fence, a check for every acceptance line |
+| Plan | `aw-planner` | Writes the plan: acceptance lines, decisions with sources, scope fence, a check for every acceptance line that fails before the change |
+| Plan review | `aw-refuter` | Only for risky bullets (data, auth, cross-repository contracts, decision records, re-plans): the other vendor's model checks the plan before any code |
 | Publish | `aw-product-owner` | Writes the accepted plan into the bullet's issue |
 | Implement | `aw-builder` | Builds that bullet and nothing else |
 | QA | `aw-qa` | Runs the project checks and maps every change to a plan step |
@@ -106,7 +125,8 @@ accepts the plan, decides on review findings and owns Git.
 | Pull request | coordinator | Commits, opens the pull request, works through its reviews, merges when allowed |
 
 It stops and reports when the board has nothing ready or access is missing, and
-asks you when a decision is not settled by your roadmap, plans or code. For a
+asks you when a decision is not settled by your roadmap, plans or code, all of a
+bullet's open questions together as one numbered round. For a
 product spread over several repositories, list them under `repos` in the policy. It merges only
 when you set `"merge": {"allowed": true}` and every review and check has passed;
 with `false` it leaves each pull request ready for you. The script uses your `gh`
@@ -173,7 +193,7 @@ stages are also available when you only need one part:
 | `aw-discover` | A PRD only |
 | `aw-domain` | Domain vocabulary, examples, invariants and boundaries |
 | `aw-roadmap` | A roadmap and milestone files from accepted requirements |
-| `aw-plan` | A detailed plan for one tracer bullet |
+| `aw-plan` | A detailed plan for one tracer bullet; `aw-plan ahead N` settles the next cards' decisions before delivery |
 | `aw-execute` | A bounded implementation or repair stage |
 | `aw-review` | Independent reviews, finding adjudication and verification |
 | `aw-resume` | Coordinate or resume approved work, including recovery and verification |

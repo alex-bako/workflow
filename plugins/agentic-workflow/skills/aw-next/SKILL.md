@@ -20,12 +20,17 @@ the order of moves. One pass = one bullet. Building a sibling bullet is a defect
    to this session or worktree at its recorded stage; never take over another's. A
    `blocked` one resumes only when the found issue or question its Progress names is
    resolved (`show` it); steward `sync` sets it in progress. Until then, or else,
-   steward `claim` the first candidate. None: stop, report reasons and drift.
+   steward `claim` the first candidate. None: stop, report reasons and drift; for
+   cards skipped with `open_decisions`, recommend `aw-plan ahead`.
 4. Dispatch `aw-planner` with the work order; the plan carries the acceptance lines
-   verbatim, scope fence, acceptance checks and QA baselines. Answer its question
-   from the authority file or raise it as an open question; accept the plan when
-   nothing material is guessed, else return it with corrections. Steward `plan`
-   writes it into the bullet issue; republish after accepted changes.
+   verbatim, its decisions with sources, scope fence, acceptance checks that fail
+   at the base commit and QA baselines. Answer its open decisions from the
+   authority file, records and code, or raise the rest as open questions. Run the
+   [plan review](../../references/loop.md#stages) when a trigger holds (the other
+   vendor's `aw-refuter`, target `plan`); else record the skip. Accept the plan
+   when no `OPEN` decision remains and every acceptance line has a check, else
+   return it with corrections. Steward `plan` writes it into the bullet issue;
+   republish after accepted changes.
 5. `aw-execute`: builder briefs carry plan path, acceptance lines and the fence under
    Exclusions. Answer builder questions from the plan and authority file.
 6. QA loop: `aw-qa` on a frozen snapshot; findings go to the builder; QA rechecks the
@@ -63,7 +68,9 @@ report it at step 11 as unfiled found work; it is never dropped.
 
 Stop when no candidate exists, an open question waits, or access or authority is
 missing; report every in-flight bullet and the exact next action. Ask only open
-questions, one with a recommendation; steward `sync` sets the bullet blocked with it.
+questions, all of a bullet's together as one numbered round with recommendations
+([grilling](../../references/grilling.md#asking-a-round)); steward `sync` sets the
+bullet blocked with it.
 
 Briefs follow [the dispatch contract](../../references/subagents.md), plus:
 - `aw-product-owner`: mode; tracker command and policy path; granted write commands;
@@ -71,7 +78,10 @@ Briefs follow [the dispatch contract](../../references/subagents.md), plus:
   intake: observation, evidence artifact paths, found-in item, body file path.
 - `aw-planner`: work order; authority-file section; worktree; plan path; absolute path
   of `skills/aw-plan/SKILL.md`; on return, the prior plan and corrections.
+- `aw-refuter` plan review: target `plan`; work order; authority-file section; plan
+  path; worktree; the trigger that applies; report path.
 - `aw-qa`: snapshot (worktree, base/head or fingerprint); plan path; acceptance lines;
+  the builder's red evidence (failing command and assertion per new check);
   fence; baselines with the project's check commands; prior QA IDs and repair diff.
 - `aw-router`: bullet id; worktree; the bullet's own base and head or fingerprint;
   plan path; QA evidence; packet path; on rereview the finding ledger and repair diff.

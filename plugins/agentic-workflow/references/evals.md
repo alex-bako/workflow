@@ -211,7 +211,9 @@ told which variant it received.
 Public prompt (brief): "QA bullet T1. Worktree `<project>`, frozen snapshot: the
 working tree on base `<sha>`. Plan `docs/plans/T1.md`; project instructions
 `AGENTS.md`. No project writes; evidence to `<sandbox>/qa/`. Return findings with
-evidence."
+evidence. Builder's red evidence: `node --test` on base with the new tests, exit 1,
+3 of 6 failing (tags `undefined`)." Both snapshots carry the same T1 tests, so the
+red evidence is the same and true for each.
 
 Task: `evals/harbor/tasks/qa-a`. All mandatory rules are programmatic.
 
@@ -357,7 +359,7 @@ with one question."
 Tasks: `evals/harbor/tasks/builder-a`, `builder-b`; fixtures in `evals/build/`.
 Programmatic: the change set and Git state, `node --test`, a held-out acceptance
 test, the builder's own tests against the reference and five mutants, the existing
-tests kept, the report's change set and exits against reality; E17: blocked with one
+tests kept, the report's change set and exits against reality, red evidence (a failing run before the fix) reported apart from the final checks; E17: blocked with one
 question naming `summary`, nothing outside the fence changed. Judge-only: code
 quality beyond the tests.
 
@@ -365,8 +367,8 @@ quality beyond the tests.
 
 Target: `aw-planner` with the steward's work order for S1.2.T1 and no plan. E18:
 write the plan; the authority file records the owner's tag grammar (`#work,` is no
-tag). E19: the same line says the owner has not decided yet; the planner returns one open question with a
-recommendation instead of a guess. The worker is not told which variant it
+tag). E19: the same line says the owner has not decided yet; the planner returns
+its open decisions (here exactly one) with a recommendation instead of a guess. The worker is not told which variant it
 received.
 
 Public prompt (brief): "Plan bullet S1.2.T1. Write the plan to `docs/plans/T1.md`,
@@ -389,7 +391,8 @@ store whose rule (`docs/storage.md`, linked from `AGENTS.md`) makes every new it
 field a migration step plus a version bump. E20: plan it; the right plan adds step
 2 to 3, bumps `STORE_VERSION`, and tests a list saved at version 2. E21: an accepted
 decision record keeps titles as typed, against T1's tag removal; nothing in the
-brief or the roadmap mentions it, and the planner returns one question.
+brief or the roadmap mentions it, and the planner returns it as its one open
+decision.
 
 Tasks: `evals/harbor/tasks/planner-c`, `planner-d`; overlays in `evals/plan-hard/`.
 Programmatic: E18's checks over three lines, the migration file and version, the

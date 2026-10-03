@@ -10,6 +10,7 @@ Exit 0 ok, 2 usage/policy, 3 refused (`reason`), 4 gh failed (stderr passed thro
 """
 import argparse
 from collections import Counter
+import functools
 import json
 import os
 from pathlib import Path
@@ -24,7 +25,7 @@ PLAN_RE = re.compile(re.escape(PLAN_START) + r".*?" + re.escape(PLAN_END), re.S)
 CLAIM_RE = re.compile(r"<!-- aw:claim branch=(\S*) phase=(\S*) -->")
 MAX_BODY = 65000
 SKIP_REASONS = ("blocked", "assigned", "open_pr", "excluded_label", "not_startable", "in_progress_without_bullets",
-                "bullet_taken", "bullets_done", "untriaged")
+                "bullet_taken", "bullets_done", "untriaged", "open_decisions")
 PRIORITIES = ("urgent", "soon", "later")
 SECTION_CAP = 120  # ponytail: lines of one authority section in the output; raise when cards outgrow it
 
@@ -190,15 +191,23 @@ def parse_bullets(body, pattern):
     return [(m["id"].strip(), m["text"].strip()) for m in pattern.finditer((body or "").replace("\r\n", "\n"))]
 
 
-def authority_section(policy, cid):
-    """The authority file's section for a card id: heading, 1-based line range and text, verbatim.
-    The section runs from the first heading naming the id to the next heading of the same or a higher level."""
+@functools.lru_cache(maxsize=8)  # ponytail: per process; the CLI is one-shot, so the file cannot change under it
+def read_lines(path):
+    try:
+        return Path(path).read_text().splitlines()
+    except OSError:
+        return None
+
+
+def authority_section(policy, cid, cap=SECTION_CAP):
+    """The authority file's section for a card id: heading, 1-based line range and text, verbatim, its first `cap`
+    lines (None: all, for gating). The section runs from the first heading naming the id to the next heading of the
+    same or a higher level."""
     path = policy.get("authority")
     if not path or not cid:
         return None
-    try:
-        lines = Path(path).read_text().splitlines()
-    except OSError:
+    lines = read_lines(path)
+    if lines is None:
         return {"file": path, "error": "not readable"}
     head = re.compile(r"(#+)\s.*(?<![\w.])" + re.escape(cid) + r"(?![\w.])")
     for i, line in enumerate(lines):
@@ -208,16 +217,56 @@ def authority_section(policy, cid):
             while not lines[end - 1].strip():
                 end -= 1
             return {"file": path, "heading": line.strip(), "lines": [i + 1, end],
-                    "text": "\n".join(lines[i:end][:SECTION_CAP]), "truncated": end - i > SECTION_CAP}
+                    "text": "\n".join(lines[i:end][:cap]), "truncated": cap is not None and end - i > cap}
     return {"file": path, "error": f"no heading names {cid}"}
 
 
-def authority_of(policy, f):
+def authority_of(policy, f, cap=SECTION_CAP):
     """The authority of an issue read with its body: its card's section of the authority file; the issue body itself
     for a found issue, and for a card when the policy names no authority file."""
     if policy.get("authority") and kind(policy, f) != "found":
-        return authority_section(policy, f["id"])
+        return authority_section(policy, f["id"], cap)
     return {"issue": url(policy, f["number"]), "text": f["body"]}
+
+
+def open_decisions(text):
+    """Items of the first `Open decisions:` field of a card's authority: its inline text, else the list items under it
+    (blank lines before the first; under a field that is itself a list item, only deeper items; an indented
+    non-list line continues the item above). `none`, `(none)`, `-` or `n/a` mean none."""
+    lines = (text or "").splitlines()
+    for i, line in enumerate(lines):
+        m = re.match(r"^([ \t]*)([-*>][ \t]+)?[*_]*Open decisions[*_]*[ \t]*:[*_]*[ \t]*(.*)$", line, re.I)
+        if not m:
+            continue
+        items, floor = [m[3]], len(m[1].expandtabs(4)) + (1 if m[2] else 0)
+        last = floor
+        for nxt in ([] if m[3].strip() else lines[i + 1:]):
+            item = re.match(r"^([ \t]*)[-*][ \t]+(.*)$", nxt)
+            indent = len(re.match(r"[ \t]*", nxt)[0].expandtabs(4))
+            if not nxt.strip() and len(items) == 1:
+                continue
+            if item and indent >= floor:
+                items.append(item[2])
+                last = indent
+            elif not item and nxt.strip() and len(items) > 1 and indent > last:
+                items[-1] += " " + nxt.strip()
+            else:
+                break
+        return [x.strip() for x in items if x.strip() and x.strip().strip("().").casefold() not in ("none", "-", "—", "n/a")]
+    return []
+
+
+def holding(items, bullet_id):
+    """The open decisions that hold bullet `bullet_id`: an item's `(T2, T3)` tag, before its first colon, names the
+    bullets it binds; an untagged item binds the whole card. With no bullet known (a card not yet split into
+    sub-issues), every item holds: `next` cannot read the card body, so the card waits for all of them."""
+    def tags(x):
+        m = re.match(r"^[^:(]*\(([^)]*)\)", x)
+        return re.findall(r"T\d+", m[1]) if m else []
+    if not bullet_id:
+        return list(items)
+    short = bullet_id.rsplit(".", 1)[-1]
+    return [x for x in items if not tags(x) or short in tags(x)]
 
 
 def repos_of(policy, body):
@@ -341,11 +390,11 @@ def unavailable(f, startable):
 
 
 def select(policy, board, order, me):
-    """Selection rule of tracker.md: (candidates, skipped counts)."""
+    """Selection rule of tracker.md: (candidates, skipped counts, ids of cards held by open decisions)."""
     st = policy["states"]
     taken_cols = {st["in_progress"], st["in_review"]}
     startable = {st[k] for k in policy["items"]["startable_states"]}
-    started, new, found, skipped = [], [], {r: [] for r in PRIORITIES}, Counter()
+    started, new, found, skipped, held = [], [], {r: [] for r in PRIORITIES}, Counter(), []
     for f in board.values():
         k = kind(policy, f)
         if f["state"] != "OPEN" or k not in ("card", "found"):
@@ -361,6 +410,8 @@ def select(policy, board, order, me):
         if excluded(policy, f):
             skipped["excluded_label"] += 1
             continue
+        # ponytail: board items carry no body, so without an authority file only `claim` sees a card body's open decisions.
+        items = open_decisions((authority_section(policy, f["id"], None) or {}).get("text")) if policy.get("authority") else []
         bullets = bullets_of(policy, f, board)
         if bullets:
             b = next((b for b in bullets if b["state"] == "OPEN"), None)
@@ -372,10 +423,16 @@ def select(policy, board, order, me):
                 skipped["bullet_taken"] += 1
             elif open_blockers(b):
                 skipped["blocked"] += 1
+            elif holding(items, b["id"]):
+                skipped["open_decisions"] += 1
+                held.append(f["id"])
             else:
                 started.append((rank(order, f), b, f))
             continue
         reason = "in_progress_without_bullets" if f["status"] == st["in_progress"] else unavailable(f, startable)
+        if not reason and holding(items, None):
+            reason = "open_decisions"
+            held.append(f["id"])
         if reason:
             skipped[reason] += 1
         else:
@@ -392,7 +449,7 @@ def select(policy, board, order, me):
         if c["kind"] == "found":
             c["priority"] = priority(policy, f)
         out.append(c)
-    return out, {r: skipped[r] for r in SKIP_REASONS if skipped[r]}
+    return out, {r: skipped[r] for r in SKIP_REASONS if skipped[r]}, held
 
 
 def drift(policy, board, open_issues=()):
@@ -713,7 +770,7 @@ def cmd_next(t, args):
     p = t.policy
     order = load_order(p)
     board = t.board()
-    candidates, skipped = select(p, board, order, t.me)
+    candidates, skipped, held = select(p, board, order, t.me)
     offer(p, board, candidates[:args.limit])
     # Blocked work items stay in flight so stage 1 resumes them once their blocker is resolved.
     columns = {p["states"]["in_progress"], p["states"]["in_review"], p["states"]["blocked"]}
@@ -725,7 +782,10 @@ def cmd_next(t, args):
         claim = last_claim(comments[f["number"]]) or {}
         flight.append({"number": f["number"], "id": f["id"], "card": f["parent"], "assignees": f["assignees"],
                        "status": state_key(p, f["status"]), "branch": claim.get("branch"), "phase": claim.get("phase")})
-    return {"candidates": candidates[:args.limit], "in_flight": flight, "skipped": skipped, "authority": p.get("authority")}
+    out = {"candidates": candidates[:args.limit], "in_flight": flight, "skipped": skipped, "authority": p.get("authority")}
+    if held:
+        out["open_decisions"] = held
+    return out
 
 
 def cmd_show(t, args):
@@ -758,7 +818,7 @@ def cmd_work_order(t, args):
     except Refused as e:
         claim.update(allowed=False, reason=e.reason, detail=e.detail)
     mine = {item["number"], f["number"]} | {b["number"] for b in bullets if b["number"]}
-    candidates, _ = select(p, board, load_order(p), t.me)
+    candidates, _, _ = select(p, board, load_order(p), t.me)
     plan = PLAN_RE.search(work["body"])
     section = authority_of(p, item)
     return {
@@ -850,6 +910,15 @@ def claimable(t, f):
         earlier = [b["number"] for b in bullets_of(p, parent, {}) if bullet_key(b) < bullet_key(f) and b["state"] == "OPEN"]
         if earlier:
             raise Refused("blocked", f"earlier bullets of #{parent['number']} still open: {earlier}")
+    card = parent or (f if k == "card" else None)
+    if card:  # the bullet this claim leads to: the bullet itself, or a card's first open sub-issue, as `next` sees it
+        first = f["id"] if k == "bullet" else next((b["id"] for b in bullets_of(p, f, {}) if b["state"] == "OPEN"), None)
+        section = authority_of(p, card, None) or {}
+        if section.get("error") == "not readable":  # fail closed: unread decisions are not settled ones
+            raise Refused("open_decisions", f"cannot read {section['file']} to check card #{card['number']}'s open decisions")
+        left = holding(open_decisions(section.get("text")), first)
+        if left:
+            raise Refused("open_decisions", f"card #{card['number']} has open decisions for {first or 'the card'}: {left}")
     return mine, parent
 
 
@@ -1085,7 +1154,9 @@ def main(argv=None):
         extra = dict(e.extra)
         if args.cmd == "claim":  # the fallback the steward returns, so a refusal needs no second call
             try:
-                extra["next_candidates"] = cmd_next(t, argparse.Namespace(limit=3))["candidates"]
+                refused = {str(args.number), str(args.number).lstrip("#")}  # never offer the item just refused again
+                extra["next_candidates"] = [c for c in cmd_next(t, argparse.Namespace(limit=4))["candidates"]
+                                            if c["id"] not in refused and str(c["number"]) not in refused][:3]
             except (Usage, GhFailed):
                 pass
         return emit(3, {"reason": e.reason, "detail": e.detail, **extra, "writes": t.writes if t else []})
